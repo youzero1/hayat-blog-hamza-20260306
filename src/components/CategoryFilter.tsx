@@ -1,51 +1,22 @@
 'use client';
 
-import { useRouter, usePathname, useSearchParams } from 'next/navigation';
-import { useCallback } from 'react';
-
-interface Category {
-  id: number;
-  name: string;
-  slug: string;
-}
+import { CategoryType } from '@/types';
 
 interface CategoryFilterProps {
-  categories: Category[];
+  categories: CategoryType[];
   selected: string;
-  paramName?: string;
+  onChange: (slug: string) => void;
 }
 
-export default function CategoryFilter({
-  categories,
-  selected,
-  paramName = 'category',
-}: CategoryFilterProps) {
-  const router = useRouter();
-  const pathname = usePathname();
-  const searchParams = useSearchParams();
-
-  const handleSelect = useCallback(
-    (slug: string) => {
-      const params = new URLSearchParams(searchParams.toString());
-      if (slug) {
-        params.set(paramName, slug);
-      } else {
-        params.delete(paramName);
-      }
-      params.delete('page');
-      router.push(`${pathname}?${params.toString()}`);
-    },
-    [router, pathname, searchParams, paramName]
-  );
-
+export default function CategoryFilter({ categories, selected, onChange }: CategoryFilterProps) {
   return (
     <div className="flex flex-wrap gap-2">
       <button
-        onClick={() => handleSelect('')}
-        className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
+        onClick={() => onChange('')}
+        className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${
           !selected
-            ? 'bg-forest-600 text-white'
-            : 'bg-white border border-gray-200 text-gray-600 hover:border-forest-400 hover:text-forest-600'
+            ? 'bg-hayat-600 text-white'
+            : 'bg-white text-earth-600 hover:bg-hayat-50 border border-earth-200'
         }`}
       >
         All
@@ -53,11 +24,11 @@ export default function CategoryFilter({
       {categories.map((cat) => (
         <button
           key={cat.id}
-          onClick={() => handleSelect(cat.slug)}
-          className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
+          onClick={() => onChange(cat.slug)}
+          className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${
             selected === cat.slug
-              ? 'bg-forest-600 text-white'
-              : 'bg-white border border-gray-200 text-gray-600 hover:border-forest-400 hover:text-forest-600'
+              ? 'bg-hayat-600 text-white'
+              : 'bg-white text-earth-600 hover:bg-hayat-50 border border-earth-200'
           }`}
         >
           {cat.name}

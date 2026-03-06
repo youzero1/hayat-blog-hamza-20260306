@@ -8,52 +8,49 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        primary: {
+        hayat: {
           50: '#fdf8f0',
           100: '#faefd9',
-          200: '#f4dcb0',
-          300: '#ecc47e',
-          400: '#e3a54a',
-          500: '#d98c28',
-          600: '#c4741e',
-          700: '#a35a1a',
-          800: '#84481c',
-          900: '#6c3c1a',
+          200: '#f4dbb2',
+          300: '#ecc280',
+          400: '#e2a050',
+          500: '#d4823a',
+          600: '#c4692e',
+          700: '#a35128',
+          800: '#834027',
+          900: '#6b3523',
+          950: '#3a1a10',
         },
-        warm: {
-          50: '#fafaf9',
-          100: '#f5f5f0',
-          200: '#e8e8df',
-          300: '#d4d4c8',
-          400: '#a8a895',
-          500: '#7c7c6a',
-          600: '#5e5e4e',
-          700: '#4a4a3c',
-          800: '#3a3a2e',
-          900: '#2e2e24',
-        },
-        sage: {
-          50: '#f4f7f4',
-          100: '#e4ece4',
-          200: '#c9d9c9',
-          300: '#a2bda2',
-          400: '#739973',
-          500: '#527a52',
-          600: '#3f613f',
-          700: '#334d33',
-          800: '#2b3f2b',
-          900: '#243524',
+        earth: {
+          50: '#f7f5f2',
+          100: '#ede8e0',
+          200: '#dbd2c3',
+          300: '#c3b59e',
+          400: '#ab9478',
+          500: '#9a7f62',
+          600: '#8d7056',
+          700: '#755c48',
+          800: '#614c3e',
+          900: '#504038',
+          950: '#2a201c',
         },
       },
       fontFamily: {
-        serif: ['Georgia', 'Cambria', '"Times New Roman"', 'Times', 'serif'],
-        sans: ['Inter', 'system-ui', 'sans-serif'],
+        sans: ['Inter', 'sans-serif'],
+        serif: ['Georgia', 'serif'],
       },
-      typography: {
-        DEFAULT: {
-          css: {
-            maxWidth: 'none',
-          },
+      animation: {
+        'fade-in': 'fadeIn 0.5s ease-in-out',
+        'slide-up': 'slideUp 0.3s ease-out',
+      },
+      keyframes: {
+        fadeIn: {
+          '0%': { opacity: '0' },
+          '100%': { opacity: '1' },
+        },
+        slideUp: {
+          '0%': { transform: 'translateY(10px)', opacity: '0' },
+          '100%': { transform: 'translateY(0)', opacity: '1' },
         },
       },
     },

@@ -2,24 +2,26 @@ import {
   Entity,
   PrimaryGeneratedColumn,
   Column,
-  OneToMany,
   CreateDateColumn,
   UpdateDateColumn,
 } from 'typeorm';
 
-@Entity('categories')
-export class Category {
+@Entity('authors')
+export class Author {
   @PrimaryGeneratedColumn()
   id!: number;
 
-  @Column({ unique: true })
+  @Column()
   name!: string;
 
   @Column({ unique: true })
-  slug!: string;
+  email!: string;
 
   @Column({ nullable: true })
-  description!: string;
+  bio!: string;
+
+  @Column({ nullable: true })
+  avatarUrl!: string;
 
   @CreateDateColumn()
   createdAt!: Date;

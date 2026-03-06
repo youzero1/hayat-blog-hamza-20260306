@@ -4,31 +4,32 @@ export interface PostType {
   slug: string;
   content: string;
   excerpt: string;
-  coverImage: string | null;
-  author: string;
-  isFeatured: boolean;
-  isPublished: boolean;
+  thumbnailUrl: string;
+  readTime: number;
+  views: number;
+  published: boolean;
   createdAt: string;
   updatedAt: string;
   category?: CategoryType;
-  comments?: CommentType[];
+  author?: AuthorType;
+  categoryId?: number;
+  authorId?: number;
 }
 
 export interface CategoryType {
   id: number;
   name: string;
   slug: string;
-  description: string | null;
+  description: string;
   postCount?: number;
 }
 
-export interface CommentType {
+export interface AuthorType {
   id: number;
-  authorName: string;
+  name: string;
   email: string;
-  content: string;
-  createdAt: string;
-  post?: PostType;
+  bio: string;
+  avatarUrl: string;
 }
 
 export interface PaginatedResponse<T> {
@@ -39,7 +40,9 @@ export interface PaginatedResponse<T> {
   totalPages: number;
 }
 
-export interface ApiError {
-  error: string;
+export interface ApiResponse<T> {
+  success: boolean;
+  data?: T;
+  error?: string;
   message?: string;
 }

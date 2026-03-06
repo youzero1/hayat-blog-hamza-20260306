@@ -1,31 +1,29 @@
 import Link from 'next/link';
 import Image from 'next/image';
+import { PostType, CategoryType } from '@/types';
 
 interface SidebarProps {
-  relatedPosts?: any[];
-  products?: any[];
+  popularPosts?: PostType[];
+  categories?: CategoryType[];
 }
 
-export default function Sidebar({ relatedPosts = [], products = [] }: SidebarProps) {
+export default function Sidebar({ popularPosts = [], categories = [] }: SidebarProps) {
   return (
-    <aside className="w-full lg:w-80 flex-shrink-0 space-y-8">
-      {relatedPosts.length > 0 && (
-        <div className="bg-white rounded-2xl p-6 shadow-sm">
-          <h3 className="font-serif font-bold text-xl text-forest-800 mb-4">Related Posts</h3>
+    <aside className="space-y-6">
+      {/* Popular Posts */}
+      {popularPosts.length > 0 && (
+        <div className="bg-white rounded-xl shadow-sm p-5">
+          <h3 className="font-bold text-earth-800 mb-4 text-lg">Popular Posts</h3>
           <div className="space-y-4">
-            {relatedPosts.map((post: any) => (
-              <Link key={post.id} href={`/blog/${post.slug}`} className="block group">
-                <div className="flex gap-3">
-                  {post.coverImage && (
-                    <div className="relative w-16 h-16 rounded-lg overflow-hidden flex-shrink-0">
-                      <Image src={post.coverImage} alt={post.title} fill className="object-cover" />
-                    </div>
-                  )}
-                  <div>
-                    <p className="font-medium text-gray-800 group-hover:text-forest-600 transition-colors text-sm line-clamp-2">
+            {popularPosts.map((post, idx) => (
+              <Link key={post.id} href={`/blog/${post.slug}`}>
+                <div className="flex gap-3 group">
+                  <div className="text-2xl font-bold text-earth-200 w-6 flex-shrink-0">{idx + 1}</div>
+                  <div className="flex-1">
+                    <h4 className="text-sm font-medium text-earth-800 group-hover:text-hayat-600 transition-colors line-clamp-2">
                       {post.title}
-                    </p>
-                    <p className="text-xs text-gray-400 mt-1">{post.author}</p>
+                    </h4>
+                    <p className="text-xs text-earth-400 mt-0.5">{post.views.toLocaleString()} views</p>
                   </div>
                 </div>
               </Link>
@@ -34,24 +32,22 @@ export default function Sidebar({ relatedPosts = [], products = [] }: SidebarPro
         </div>
       )}
 
-      {products.length > 0 && (
-        <div className="bg-white rounded-2xl p-6 shadow-sm">
-          <h3 className="font-serif font-bold text-xl text-forest-800 mb-4">🛍️ Recommended</h3>
-          <div className="space-y-4">
-            {products.map((product: any) => (
-              <Link key={product.id} href={`/products/${product.id}`} className="block group">
-                <div className="flex gap-3">
-                  {product.imageUrl && (
-                    <div className="relative w-16 h-16 rounded-lg overflow-hidden flex-shrink-0">
-                      <Image src={product.imageUrl} alt={product.name} fill className="object-cover" />
-                    </div>
+      {/* Categories */}
+      {categories.length > 0 && (
+        <div className="bg-white rounded-xl shadow-sm p-5">
+          <h3 className="font-bold text-earth-800 mb-4 text-lg">Categories</h3>
+          <div className="space-y-2">
+            {categories.map((cat) => (
+              <Link key={cat.id} href={`/categories/${cat.slug}`}>
+                <div className="flex items-center justify-between p-2 rounded-lg hover:bg-hayat-50 transition-colors group">
+                  <span className="text-sm font-medium text-earth-700 group-hover:text-hayat-600 transition-colors">
+                    {cat.name}
+                  </span>
+                  {cat.postCount !== undefined && (
+                    <span className="text-xs bg-earth-100 text-earth-500 px-2 py-0.5 rounded-full">
+                      {cat.postCount}
+                    </span>
                   )}
-                  <div>
-                    <p className="font-medium text-gray-800 group-hover:text-forest-600 transition-colors text-sm">
-                      {product.name}
-                    </p>
-                    <p className="text-forest-600 font-bold text-sm">${Number(product.price).toFixed(2)}</p>
-                  </div>
                 </div>
               </Link>
             ))}

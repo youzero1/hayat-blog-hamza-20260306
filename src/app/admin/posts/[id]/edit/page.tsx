@@ -1,9 +1,18 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { CategoryType } from '@/types';
+import { CategoryType, PostType } from '@/types';
+
+function slugify(text: string): string {
+  return text
+    .toLowerCase()
+    .replace(/[^a-z0-9\s-]/g, '')
+    .replace(/\s+/g, '-')
+    .replace(/-+/g, '-')
+    .trim();
+}
 
 export default function EditPostPage({ params }: { params: { id: string } }) {
   const router = useRouter();
@@ -13,64 +22,61 @@ export default function EditPostPage({ params }: { params: { id: string } }) {
   const [error, setError] = useState('');
   const [form, setForm] = useState({
     title: '',
+    slug: '',
     content: '',
     excerpt: '',
-    coverImage: '',
-    author: '',
+    thumbnailUrl: '',
+    readTime: 5,
     categoryId: '',
-    isFeatured: false,
-    isPublished: true,
+    published: false,
   });
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const [postRes, catsRes] = await Promise.all([
-          fetch(`/api/posts/${params.id}`),
-          fetch('/api/categories'),
-        ]);
-
-        if (postRes.ok) {
-          const post = await postRes.json();
-          setForm({
-            title: post.title || '',
-            content: post.content || '',
-            excerpt: post.excerpt || '',
-            coverImage: post.coverImage || '',
-            author: post.author || '',
-            categoryId: post.category?.id ? String(post.category.id) : '',
-            isFeatured: post.isFeatured || false,
-            isPublished: post.isPublished !== undefined ? post.isPublished : true,
-          });
-        }
-
-        if (catsRes.ok) {
-          setCategories(await catsRes.json());
-        }
-      } catch (err) {
-        console.error(err);
-        setError('Failed to load post');
-      } finally {
-        setFetching(false);
+  const fetchPost = useCallback(async () => {
+    try {
+      const res = await fetch(`/api/posts/${params.id}`);
+      const data = await res.json();
+      if (data.data) {
+        const post: PostType = data.data;
+        setForm({
+          title: post.title,
+          slug: post.slug,
+          content: post.content,
+          excerpt: post.excerpt,
+          thumbnailUrl: post.thumbnailUrl || '',
+          readTime: post.readTime,
+          categoryId: post.categoryId?.toString() || '',
+          published: post.published,
+        });
       }
-    };
-    fetchData();
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setFetching(false);
+    }
   }, [params.id]);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-    const { name, value, type } = e.target;
-    if (type === 'checkbox') {
-      setForm({ ...form, [name]: (e.target as HTMLInputElement).checked });
-    } else {
-      setForm({ ...form, [name]: value });
-    }
+  useEffect(() => {
+    const auth = sessionStorage.getItem('hayat_admin');
+    if (auth !== 'true') router.push('/admin');
+    fetchPost();
+    fetchCategories();
+  }, [router, fetchPost]);
+
+  const fetchCategories = async () => {
+    const res = await fetch('/api/categories');
+    const data = await res.json();
+    setCategories(data.data || []);
+  };
+
+  const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const title = e.target.value;
+    setForm((f) => ({ ...f, title, slug: slugify(title) }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError('');
-
     try {
       const res = await fetch(`/api/posts/${params.id}`, {
         method: 'PUT',
@@ -80,15 +86,14 @@ export default function EditPostPage({ params }: { params: { id: string } }) {
           categoryId: form.categoryId ? parseInt(form.categoryId) : null,
         }),
       });
-
+      const data = await res.json();
       if (res.ok) {
         router.push('/admin');
       } else {
-        const data = await res.json();
         setError(data.error || 'Failed to update post');
       }
     } catch {
-      setError('An unexpected error occurred');
+      setError('An error occurred. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -96,159 +101,142 @@ export default function EditPostPage({ params }: { params: { id: string } }) {
 
   if (fetching) {
     return (
-      <div className="max-w-4xl mx-auto px-4 py-12 text-center">
-        <div className="animate-spin w-10 h-10 border-4 border-primary-300 border-t-primary-600 rounded-full mx-auto"></div>
-        <p className="text-warm-500 mt-4">Loading post...</p>
+      <div className="min-h-screen bg-hayat-50 flex items-center justify-center">
+        <div className="text-earth-500">Loading post...</div>
       </div>
     );
   }
 
   return (
-    <div className="max-w-4xl mx-auto px-4 py-12">
-      <div className="flex items-center gap-4 mb-8">
-        <Link href="/admin" className="text-warm-500 hover:text-warm-700 transition-colors">
-          ← Back to Admin
-        </Link>
-        <h1 className="text-2xl font-serif font-bold text-warm-900">Edit Post</h1>
+    <div className="min-h-screen bg-hayat-50">
+      <div className="bg-earth-900 text-white px-6 py-4">
+        <div className="max-w-4xl mx-auto flex items-center gap-4">
+          <Link href="/admin" className="text-earth-400 hover:text-white transition-colors">← Admin</Link>
+          <h1 className="text-xl font-bold text-hayat-300">Edit Post</h1>
+        </div>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-6">
-        {error && (
-          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl">
-            {error}
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8">
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <div className="bg-white rounded-xl shadow-sm p-6">
+            <h2 className="font-bold text-earth-800 mb-4">Post Details</h2>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-earth-700 mb-1">Title *</label>
+                <input
+                  type="text"
+                  required
+                  value={form.title}
+                  onChange={handleTitleChange}
+                  className="w-full border border-earth-300 rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-hayat-400 text-earth-800"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-earth-700 mb-1">Slug *</label>
+                <input
+                  type="text"
+                  required
+                  value={form.slug}
+                  onChange={(e) => setForm((f) => ({ ...f, slug: e.target.value }))}
+                  className="w-full border border-earth-300 rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-hayat-400 text-earth-800 font-mono text-sm"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-earth-700 mb-1">Excerpt *</label>
+                <textarea
+                  required
+                  value={form.excerpt}
+                  onChange={(e) => setForm((f) => ({ ...f, excerpt: e.target.value }))}
+                  rows={3}
+                  className="w-full border border-earth-300 rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-hayat-400 text-earth-800"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-earth-700 mb-1">Content (HTML supported)</label>
+                <textarea
+                  value={form.content}
+                  onChange={(e) => setForm((f) => ({ ...f, content: e.target.value }))}
+                  rows={15}
+                  className="w-full border border-earth-300 rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-hayat-400 text-earth-800 font-mono text-sm"
+                />
+              </div>
+            </div>
           </div>
-        )}
 
-        <div className="bg-white rounded-2xl shadow-sm border border-warm-200 p-6 space-y-5">
-          <h2 className="text-lg font-bold text-warm-800 border-b border-warm-100 pb-3">Post Details</h2>
-
-          <div>
-            <label className="block text-sm font-semibold text-warm-700 mb-2">Title *</label>
-            <input
-              type="text"
-              name="title"
-              value={form.title}
-              onChange={handleChange}
-              required
-              className="w-full border border-warm-300 rounded-xl px-4 py-2.5 text-warm-800 focus:outline-none focus:ring-2 focus:ring-primary-400 focus:border-transparent"
-            />
+          <div className="bg-white rounded-xl shadow-sm p-6">
+            <h2 className="font-bold text-earth-800 mb-4">Post Settings</h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-earth-700 mb-1">Thumbnail URL</label>
+                <input
+                  type="url"
+                  value={form.thumbnailUrl}
+                  onChange={(e) => setForm((f) => ({ ...f, thumbnailUrl: e.target.value }))}
+                  className="w-full border border-earth-300 rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-hayat-400 text-earth-800"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-earth-700 mb-1">Read Time (minutes)</label>
+                <input
+                  type="number"
+                  min={1}
+                  max={60}
+                  value={form.readTime}
+                  onChange={(e) => setForm((f) => ({ ...f, readTime: parseInt(e.target.value) }))}
+                  className="w-full border border-earth-300 rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-hayat-400 text-earth-800"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-earth-700 mb-1">Category</label>
+                <select
+                  value={form.categoryId}
+                  onChange={(e) => setForm((f) => ({ ...f, categoryId: e.target.value }))}
+                  className="w-full border border-earth-300 rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-hayat-400 text-earth-800"
+                >
+                  <option value="">Select Category</option>
+                  {categories.map((cat) => (
+                    <option key={cat.id} value={cat.id}>{cat.name}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="flex items-center gap-3 pt-6">
+                <input
+                  type="checkbox"
+                  id="published"
+                  checked={form.published}
+                  onChange={(e) => setForm((f) => ({ ...f, published: e.target.checked }))}
+                  className="w-4 h-4 text-hayat-600"
+                />
+                <label htmlFor="published" className="text-sm font-medium text-earth-700">
+                  Published
+                </label>
+              </div>
+            </div>
           </div>
 
-          <div>
-            <label className="block text-sm font-semibold text-warm-700 mb-2">Author *</label>
-            <input
-              type="text"
-              name="author"
-              value={form.author}
-              onChange={handleChange}
-              required
-              className="w-full border border-warm-300 rounded-xl px-4 py-2.5 text-warm-800 focus:outline-none focus:ring-2 focus:ring-primary-400 focus:border-transparent"
-            />
-          </div>
+          {error && (
+            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
+              {error}
+            </div>
+          )}
 
-          <div>
-            <label className="block text-sm font-semibold text-warm-700 mb-2">Category</label>
-            <select
-              name="categoryId"
-              value={form.categoryId}
-              onChange={handleChange}
-              className="w-full border border-warm-300 rounded-xl px-4 py-2.5 text-warm-800 focus:outline-none focus:ring-2 focus:ring-primary-400 focus:border-transparent bg-white"
+          <div className="flex gap-3">
+            <button
+              type="submit"
+              disabled={loading}
+              className="bg-hayat-600 text-white font-semibold px-8 py-3 rounded-lg hover:bg-hayat-700 disabled:opacity-50 transition-colors"
             >
-              <option value="">Select a category...</option>
-              {categories.map((cat) => (
-                <option key={cat.id} value={cat.id}>{cat.name}</option>
-              ))}
-            </select>
+              {loading ? 'Saving...' : 'Save Changes'}
+            </button>
+            <Link
+              href="/admin"
+              className="bg-earth-100 text-earth-700 font-semibold px-8 py-3 rounded-lg hover:bg-earth-200 transition-colors"
+            >
+              Cancel
+            </Link>
           </div>
-
-          <div>
-            <label className="block text-sm font-semibold text-warm-700 mb-2">Cover Image URL</label>
-            <input
-              type="url"
-              name="coverImage"
-              value={form.coverImage}
-              onChange={handleChange}
-              placeholder="https://..."
-              className="w-full border border-warm-300 rounded-xl px-4 py-2.5 text-warm-800 focus:outline-none focus:ring-2 focus:ring-primary-400 focus:border-transparent"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-semibold text-warm-700 mb-2">Excerpt</label>
-            <textarea
-              name="excerpt"
-              value={form.excerpt}
-              onChange={handleChange}
-              rows={3}
-              maxLength={300}
-              className="w-full border border-warm-300 rounded-xl px-4 py-2.5 text-warm-800 focus:outline-none focus:ring-2 focus:ring-primary-400 focus:border-transparent resize-none"
-            />
-            <p className="text-xs text-warm-400 mt-1">{form.excerpt.length}/300 characters</p>
-          </div>
-
-          <div>
-            <label className="block text-sm font-semibold text-warm-700 mb-2">Content *</label>
-            <textarea
-              name="content"
-              value={form.content}
-              onChange={handleChange}
-              required
-              rows={16}
-              className="w-full border border-warm-300 rounded-xl px-4 py-2.5 text-warm-800 focus:outline-none focus:ring-2 focus:ring-primary-400 focus:border-transparent font-mono text-sm resize-y"
-            />
-          </div>
-
-          <div className="flex flex-col sm:flex-row gap-4 pt-2">
-            <label className="flex items-center gap-3 cursor-pointer">
-              <div className="relative">
-                <input
-                  type="checkbox"
-                  name="isFeatured"
-                  checked={form.isFeatured}
-                  onChange={handleChange}
-                  className="sr-only"
-                />
-                <div className={`w-10 h-6 rounded-full transition-colors ${form.isFeatured ? 'bg-primary-500' : 'bg-warm-200'}`}>
-                  <div className={`w-4 h-4 bg-white rounded-full shadow transition-transform mt-1 ml-1 ${form.isFeatured ? 'translate-x-4' : ''}`}></div>
-                </div>
-              </div>
-              <span className="text-sm font-medium text-warm-700">Featured Post</span>
-            </label>
-
-            <label className="flex items-center gap-3 cursor-pointer">
-              <div className="relative">
-                <input
-                  type="checkbox"
-                  name="isPublished"
-                  checked={form.isPublished}
-                  onChange={handleChange}
-                  className="sr-only"
-                />
-                <div className={`w-10 h-6 rounded-full transition-colors ${form.isPublished ? 'bg-green-500' : 'bg-warm-200'}`}>
-                  <div className={`w-4 h-4 bg-white rounded-full shadow transition-transform mt-1 ml-1 ${form.isPublished ? 'translate-x-4' : ''}`}></div>
-                </div>
-              </div>
-              <span className="text-sm font-medium text-warm-700">Published</span>
-            </label>
-          </div>
-        </div>
-
-        <div className="flex items-center justify-end gap-4">
-          <Link
-            href="/admin"
-            className="px-6 py-2.5 border border-warm-300 text-warm-700 rounded-xl font-medium hover:bg-warm-100 transition-colors"
-          >
-            Cancel
-          </Link>
-          <button
-            type="submit"
-            disabled={loading}
-            className="bg-primary-500 hover:bg-primary-600 text-white px-8 py-2.5 rounded-xl font-semibold transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed hover:-translate-y-0.5 hover:shadow-md"
-          >
-            {loading ? 'Saving...' : 'Save Changes'}
-          </button>
-        </div>
-      </form>
+        </form>
+      </div>
     </div>
   );
 }

@@ -6,16 +6,15 @@ services:
       context: .
       dockerfile: Dockerfile
     ports:
-      - '3000:3000'
+      - "3000:3000"
     volumes:
-      - hayat-blog-db:/app/data
+      - ./data:/app/data
     env_file:
       - .env
     environment:
       - NODE_ENV=production
-      - DATABASE_PATH=/app/data/hayat-blog.sqlite
+      - DATABASE_PATH=./data/hayat-blog.db
+      - NEXT_PUBLIC_SITE_NAME=Hayat Blog
+      - NEXT_PUBLIC_SITE_URL=http://localhost:3000
+      - ADMIN_PASSWORD=admin123
     restart: unless-stopped
-
-volumes:
-  hayat-blog-db:
-    driver: local

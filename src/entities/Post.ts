@@ -2,51 +2,60 @@ import {
   Entity,
   PrimaryGeneratedColumn,
   Column,
-  CreateDateColumn,
-  UpdateDateColumn,
   ManyToOne,
   JoinColumn,
+  CreateDateColumn,
+  UpdateDateColumn,
 } from 'typeorm';
+import { Category } from './Category';
+import { Author } from './Author';
 
 @Entity('posts')
 export class Post {
   @PrimaryGeneratedColumn()
   id!: number;
 
-  @Column({ type: 'varchar', length: 255 })
+  @Column()
   title!: string;
 
-  @Column({ type: 'varchar', length: 255, unique: true })
+  @Column({ unique: true })
   slug!: string;
 
   @Column({ type: 'text' })
   content!: string;
 
-  @Column({ type: 'text', nullable: true })
+  @Column({ type: 'text' })
   excerpt!: string;
 
-  @Column({ type: 'varchar', length: 500, nullable: true })
-  coverImage!: string;
+  @Column({ nullable: true })
+  thumbnailUrl!: string;
 
-  @Column({ type: 'varchar', length: 100, default: 'Admin' })
-  author!: string;
+  @Column({ default: 5 })
+  readTime!: number;
 
-  @Column({ type: 'boolean', default: true })
-  isPublished!: boolean;
+  @Column({ default: 0 })
+  views!: number;
 
-  @Column({ type: 'boolean', default: false })
-  isFeatured!: boolean;
+  @Column({ default: false })
+  published!: boolean;
+
+  @Column({ nullable: true })
+  categoryId!: number;
+
+  @Column({ nullable: true })
+  authorId!: number;
+
+  @ManyToOne(() => Category, { nullable: true, eager: false })
+  @JoinColumn({ name: 'categoryId' })
+  category!: Category;
+
+  @ManyToOne(() => Author, { nullable: true, eager: false })
+  @JoinColumn({ name: 'authorId' })
+  author!: Author;
 
   @CreateDateColumn()
   createdAt!: Date;
 
   @UpdateDateColumn()
   updatedAt!: Date;
-
-  @ManyToOne('Category', 'posts', { nullable: true, eager: false })
-  @JoinColumn({ name: 'categoryId' })
-  category!: any;
-
-  @Column({ type: 'integer', nullable: true })
-  categoryId!: number;
 }
