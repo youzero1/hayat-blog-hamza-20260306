@@ -1,4 +1,3 @@
-import 'reflect-metadata';
 import {
   Entity,
   PrimaryGeneratedColumn,
@@ -6,25 +5,27 @@ import {
   CreateDateColumn,
   OneToMany,
 } from 'typeorm';
-import type { Post } from './Post';
 
 @Entity('categories')
 export class Category {
   @PrimaryGeneratedColumn()
   id!: number;
 
-  @Column({ unique: true })
+  @Column({ type: 'varchar', length: 100 })
   name!: string;
 
-  @Column({ unique: true })
+  @Column({ type: 'varchar', length: 100, unique: true })
   slug!: string;
 
-  @Column({ nullable: true, type: 'text' })
-  description!: string | null;
+  @Column({ type: 'text', nullable: true })
+  description!: string;
 
   @CreateDateColumn()
   createdAt!: Date;
 
   @OneToMany('Post', 'category')
-  posts!: Post[];
+  posts!: any[];
+
+  @OneToMany('Product', 'category')
+  products!: any[];
 }

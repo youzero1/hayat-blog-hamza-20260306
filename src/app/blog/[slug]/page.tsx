@@ -1,178 +1,211 @@
-import { notFound } from 'next/navigation';
+import { Metadata } from 'next';
+import Image from 'next/image';
 import Link from 'next/link';
-import { getDataSource } from '@/lib/database';
-import { Post } from '@/entities/Post';
-import { Product } from '@/entities/Product';
-import { formatDate } from '@/lib/utils';
+import { notFound } from 'next/navigation';
+import BlogCard from '@/components/BlogCard';
 import ProductCard from '@/components/ProductCard';
 
-export const dynamic = 'force-dynamic';
-
-interface PostPageProps {
-  params: { slug: string };
+async function getPost(slug: string) {
+  try {
+    const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
+    const res = await fetch(`${baseUrl}/api/posts/${slug}`, { cache: 'no-store' });
+    if (!res.ok) return null;
+    return res.json();
+  } catch {
+    return null;
+  }
 }
 
-export default async function PostPage({ params }: PostPageProps) {
-  const ds = await getDataSource();
-  const postRepo = ds.getRepository(Post);
-  const productRepo = ds.getRepository(Product);
-
-  const post = await postRepo.findOne({
-    where: { slug: params.slug, isPublished: true },
-    relations: ['category', 'tags'],
-  });
-
-  if (!post) {
-    notFound();
+async function getRelatedPosts(categoryId: number, currentSlug: string) {
+  try {
+    const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
+    const res = await fetch(`${baseUrl}/api/posts?category_id=${categoryId}&limit=3`, { cache: 'no-store' });
+    if (!res.ok) return [];
+    const data = await res.json();
+    return (data.posts || []).filter((p: any) => p.slug !== currentSlug).slice(0, 2);
+  } catch {
+    return [];
   }
+}
 
-  // Get related products from same category
-  let relatedProducts: Product[] = [];
-  if (post.categoryId) {
-    relatedProducts = await productRepo.find({
-      where: { categoryId: post.categoryId },
-      take: 3,
-    });
+async function getFeaturedProducts() {
+  try {
+    const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
+    const res = await fetch(`${baseUrl}/api/products?limit=3`, { cache: 'no-store' });
+    if (!res.ok) return [];
+    const data = await res.json();
+    return data.products || [];
+  } catch {
+    return [];
   }
+}
 
-  // Get related posts
-  const relatedPosts = await postRepo.find({
-    where: { isPublished: true, categoryId: post.categoryId || undefined },
-    relations: ['category'],
-    take: 3,
-    order: { publishedAt: 'DESC' },
+export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
+  const post = await getPost(params.slug);
+  if (!post) return { title: 'Post Not Found' };
+  return {
+    title: post.title,
+    description: post.excerpt,
+    openGraph: {
+      title: post.title,
+      description: post.excerpt,
+      images: post.coverImage ? [post.coverImage] : [],
+    },
+  };
+}
+
+export default async function BlogPostPage({ params }: { params: { slug: string } }) {
+  const post = await getPost(params.slug);
+  if (!post) notFound();
+
+  const [relatedPosts, products] = await Promise.all([
+    post.categoryId ? getRelatedPosts(post.categoryId, post.slug) : [],
+    getFeaturedProducts(),
+  ]);
+
+  const formattedDate = new Date(post.createdAt).toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
   });
-  const filteredRelated = relatedPosts.filter((p) => p.id !== post.id).slice(0, 3);
 
   return (
-    <div className="max-w-7xl mx-auto px-4 py-12">
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
-        {/* Main Content */}
-        <article className="lg:col-span-2">
-          {/* Breadcrumb */}
-          <nav className="flex items-center gap-2 text-sm text-warm-500 mb-6">
-            <Link href="/" className="hover:text-primary-600">Home</Link>
-            <span>/</span>
-            <Link href="/blog" className="hover:text-primary-600">Blog</Link>
-            {post.category && (
-              <>
-                <span>/</span>
-                <Link href={`/categories/${post.category.slug}`} className="hover:text-primary-600">
-                  {post.category.name}
-                </Link>
-              </>
-            )}
-          </nav>
+    <div className="py-8 px-4">
+      <div className="container-custom">
+        <div className="flex flex-col lg:flex-row gap-12">
+          {/* Main Content */}
+          <article className="flex-1 min-w-0">
+            {/* Breadcrumb */}
+            <nav className="flex items-center gap-2 text-sm text-gray-500 mb-6">
+              <Link href="/" className="hover:text-forest-600">Home</Link>
+              <span>/</span>
+              <Link href="/blog" className="hover:text-forest-600">Blog</Link>
+              <span>/</span>
+              <span className="text-gray-700 truncate">{post.title}</span>
+            </nav>
 
-          {/* Post Header */}
-          <header className="mb-8">
+            {/* Category Badge */}
             {post.category && (
-              <Link
-                href={`/categories/${post.category.slug}`}
-                className="inline-block bg-primary-100 text-primary-700 text-sm font-medium px-3 py-1 rounded-full mb-4 hover:bg-primary-200"
-              >
-                {post.category.name}
+              <Link href={`/categories/${post.category.slug}`}>
+                <span className="badge-forest mb-4">{post.category.name}</span>
               </Link>
             )}
-            <h1 className="text-4xl font-bold text-warm-900 mb-4 leading-tight" style={{ fontFamily: 'Georgia, serif' }}>
+
+            {/* Title */}
+            <h1 className="text-3xl md:text-5xl font-serif font-bold text-forest-900 mb-6 leading-tight">
               {post.title}
             </h1>
-            <div className="flex items-center gap-4 text-warm-500 text-sm">
-              <time dateTime={post.publishedAt?.toString()}>
-                {formatDate(post.publishedAt)}
-              </time>
+
+            {/* Meta */}
+            <div className="flex flex-wrap items-center gap-4 text-gray-500 text-sm mb-8 pb-8 border-b border-gray-100">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-full bg-forest-200 flex items-center justify-center text-forest-700 font-bold text-sm">
+                  {post.author?.[0]?.toUpperCase() || 'A'}
+                </div>
+                <span className="font-medium text-gray-700">{post.author}</span>
+              </div>
+              <span>·</span>
+              <time dateTime={post.createdAt}>{formattedDate}</time>
+              {post.isFeatured && (
+                <>
+                  <span>·</span>
+                  <span className="badge-gold">⭐ Featured</span>
+                </>
+              )}
             </div>
-          </header>
 
-          {/* Featured Image Placeholder */}
-          <div className="w-full h-64 bg-gradient-to-br from-primary-200 to-warm-300 rounded-2xl mb-8 flex items-center justify-center">
-            <span className="text-6xl">📖</span>
-          </div>
+            {/* Cover Image */}
+            {post.coverImage && (
+              <div className="relative w-full h-64 md:h-96 rounded-2xl overflow-hidden mb-10">
+                <Image
+                  src={post.coverImage}
+                  alt={post.title}
+                  fill
+                  className="object-cover"
+                  priority
+                />
+              </div>
+            )}
 
-          {/* Post Content */}
-          <div
-            className="prose max-w-none"
-            dangerouslySetInnerHTML={{ __html: post.content }}
-          />
+            {/* Content */}
+            <div
+              className="blog-content prose max-w-none"
+              dangerouslySetInnerHTML={{ __html: post.content }}
+            />
 
-          {/* Tags */}
-          {post.tags && post.tags.length > 0 && (
-            <div className="mt-8 pt-6 border-t border-warm-200">
-              <h3 className="text-sm font-semibold text-warm-600 uppercase tracking-wide mb-3">Tags</h3>
-              <div className="flex flex-wrap gap-2">
-                {post.tags.map((tag) => (
-                  <span
-                    key={tag.id}
-                    className="bg-warm-100 text-warm-700 px-3 py-1 rounded-full text-sm"
-                  >
-                    #{tag.name}
-                  </span>
-                ))}
+            {/* Tags */}
+            <div className="mt-10 pt-8 border-t border-gray-100">
+              <div className="flex flex-wrap gap-3">
+                {post.category && (
+                  <Link href={`/categories/${post.category.slug}`} className="badge-forest">
+                    {post.category.name}
+                  </Link>
+                )}
+                <Link href="/blog" className="badge bg-gray-100 text-gray-600">
+                  All Posts
+                </Link>
               </div>
             </div>
-          )}
+          </article>
 
-          {/* Social Share */}
-          <div className="mt-8 pt-6 border-t border-warm-200">
-            <h3 className="text-sm font-semibold text-warm-600 uppercase tracking-wide mb-3">Share this post</h3>
-            <div className="flex gap-3">
-              <button className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700">
-                Twitter
-              </button>
-              <button className="bg-blue-800 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-900">
-                Facebook
-              </button>
-              <button className="bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-green-700">
-                WhatsApp
-              </button>
-            </div>
-          </div>
-        </article>
-
-        {/* Sidebar */}
-        <aside className="space-y-8">
-          {/* Related Products */}
-          {relatedProducts.length > 0 && (
-            <div className="bg-white rounded-2xl p-6 shadow-sm border border-warm-100">
-              <h3 className="text-lg font-bold text-warm-900 mb-4">Related Products</h3>
-              <div className="space-y-4">
-                {relatedProducts.map((product) => (
-                  <div key={product.id} className="flex items-start gap-3 pb-4 border-b border-warm-100 last:border-0 last:pb-0">
-                    <div className="w-14 h-14 bg-gradient-to-br from-primary-100 to-warm-200 rounded-lg flex items-center justify-center flex-shrink-0">
-                      <span className="text-xl">🛍️</span>
-                    </div>
-                    <div className="flex-1">
-                      <h4 className="font-medium text-warm-900 text-sm mb-1 line-clamp-2">{product.name}</h4>
-                      <p className="text-primary-600 font-bold text-sm">${Number(product.price).toFixed(2)}</p>
-                      <Link href={`/products/${product.id}`} className="text-xs text-warm-500 hover:text-primary-600">
-                        View Details →
-                      </Link>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Related Posts */}
-          {filteredRelated.length > 0 && (
-            <div className="bg-white rounded-2xl p-6 shadow-sm border border-warm-100">
-              <h3 className="text-lg font-bold text-warm-900 mb-4">Related Posts</h3>
-              <div className="space-y-4">
-                {filteredRelated.map((relPost) => (
-                  <div key={relPost.id} className="pb-4 border-b border-warm-100 last:border-0 last:pb-0">
-                    <Link href={`/blog/${relPost.slug}`}>
-                      <h4 className="font-medium text-warm-900 text-sm hover:text-primary-600 leading-tight line-clamp-2">
-                        {relPost.title}
-                      </h4>
+          {/* Sidebar */}
+          <aside className="w-full lg:w-80 flex-shrink-0 space-y-8">
+            {/* Related Posts */}
+            {relatedPosts.length > 0 && (
+              <div className="bg-white rounded-2xl p-6 shadow-sm">
+                <h3 className="font-serif font-bold text-xl text-forest-800 mb-4">Related Posts</h3>
+                <div className="space-y-4">
+                  {relatedPosts.map((related: any) => (
+                    <Link key={related.id} href={`/blog/${related.slug}`} className="block group">
+                      <div className="flex gap-3">
+                        {related.coverImage && (
+                          <div className="relative w-16 h-16 rounded-lg overflow-hidden flex-shrink-0">
+                            <Image src={related.coverImage} alt={related.title} fill className="object-cover" />
+                          </div>
+                        )}
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium text-gray-800 group-hover:text-forest-600 transition-colors line-clamp-2 text-sm">
+                            {related.title}
+                          </p>
+                          <p className="text-xs text-gray-400 mt-1">{related.author}</p>
+                        </div>
+                      </div>
                     </Link>
-                    <p className="text-xs text-warm-500 mt-1">{formatDate(relPost.publishedAt)}</p>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
-            </div>
-          )}
-        </aside>
+            )}
+
+            {/* Featured Products */}
+            {products.length > 0 && (
+              <div className="bg-white rounded-2xl p-6 shadow-sm">
+                <h3 className="font-serif font-bold text-xl text-forest-800 mb-4">🛍️ Recommended Products</h3>
+                <div className="space-y-4">
+                  {products.map((product: any) => (
+                    <Link key={product.id} href={`/products/${product.id}`} className="block group">
+                      <div className="flex gap-3">
+                        {product.imageUrl && (
+                          <div className="relative w-16 h-16 rounded-lg overflow-hidden flex-shrink-0">
+                            <Image src={product.imageUrl} alt={product.name} fill className="object-cover" />
+                          </div>
+                        )}
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium text-gray-800 group-hover:text-forest-600 transition-colors text-sm line-clamp-1">
+                            {product.name}
+                          </p>
+                          <p className="text-forest-600 font-bold text-sm">${Number(product.price).toFixed(2)}</p>
+                        </div>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+                <Link href="/products" className="block text-center mt-4 text-sm text-forest-600 hover:text-forest-700 font-medium">
+                  View All Products →
+                </Link>
+              </div>
+            )}
+          </aside>
+        </div>
       </div>
     </div>
   );

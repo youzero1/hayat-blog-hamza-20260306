@@ -1,20 +1,12 @@
 import 'reflect-metadata';
 import { DataSource } from 'typeorm';
-import { Post } from '../entities/Post';
-import { Category } from '../entities/Category';
-import { Tag } from '../entities/Tag';
-import { Product } from '../entities/Product';
-import { Subscriber } from '../entities/Subscriber';
+import { Post } from '@/entities/Post';
+import { Product } from '@/entities/Product';
+import { Category } from '@/entities/Category';
+import { Contact } from '@/entities/Contact';
 import path from 'path';
-import fs from 'fs';
 
-const DB_PATH = process.env.DATABASE_PATH || './data/hayat-blog.sqlite';
-
-// Ensure data directory exists
-const dataDir = path.dirname(path.resolve(DB_PATH));
-if (!fs.existsSync(dataDir)) {
-  fs.mkdirSync(dataDir, { recursive: true });
-}
+const DATABASE_PATH = process.env.DATABASE_PATH || './hayat-blog.sqlite';
 
 let dataSource: DataSource | null = null;
 
@@ -23,16 +15,21 @@ export async function getDataSource(): Promise<DataSource> {
     return dataSource;
   }
 
+  const dbPath = path.isAbsolute(DATABASE_PATH)
+    ? DATABASE_PATH
+    : path.join(process.cwd(), DATABASE_PATH);
+
   dataSource = new DataSource({
     type: 'better-sqlite3',
-    database: path.resolve(DB_PATH),
-    entities: [Post, Category, Tag, Product, Subscriber],
+    database: dbPath,
     synchronize: true,
     logging: false,
+    entities: [Post, Product, Category, Contact],
   });
 
   await dataSource.initialize();
   await seedDatabase(dataSource);
+
   return dataSource;
 }
 
@@ -40,156 +37,301 @@ async function seedDatabase(ds: DataSource): Promise<void> {
   const categoryRepo = ds.getRepository(Category);
   const postRepo = ds.getRepository(Post);
   const productRepo = ds.getRepository(Product);
-  const tagRepo = ds.getRepository(Tag);
 
   const existingCategories = await categoryRepo.count();
   if (existingCategories > 0) return;
 
-  // Seed categories
+  // Seed Categories
   const categories = await categoryRepo.save([
-    { name: 'Lifestyle', slug: 'lifestyle', description: 'Tips and inspiration for everyday living' },
-    { name: 'Technology', slug: 'technology', description: 'Latest tech trends and reviews' },
-    { name: 'Fashion', slug: 'fashion', description: 'Style guides and fashion trends' },
-    { name: 'Health & Wellness', slug: 'health-wellness', description: 'Your guide to a healthier life' },
-    { name: 'Home & Living', slug: 'home-living', description: 'Interior design and home decor ideas' },
+    {
+      name: 'Lifestyle',
+      slug: 'lifestyle',
+      description: 'Tips and insights for a better everyday life',
+    },
+    {
+      name: 'Health & Wellness',
+      slug: 'health-wellness',
+      description: 'Your guide to a healthier, happier you',
+    },
+    {
+      name: 'Technology',
+      slug: 'technology',
+      description: 'Latest tech trends and reviews',
+    },
+    {
+      name: 'Travel',
+      slug: 'travel',
+      description: 'Explore the world with Hayat Blog',
+    },
+    {
+      name: 'Food & Recipes',
+      slug: 'food-recipes',
+      description: 'Delicious recipes and culinary adventures',
+    },
   ]);
 
-  // Seed tags
-  const tags = await tagRepo.save([
-    { name: 'Tips', slug: 'tips' },
-    { name: 'Guide', slug: 'guide' },
-    { name: 'Review', slug: 'review' },
-    { name: 'Trending', slug: 'trending' },
-    { name: 'Beginner', slug: 'beginner' },
-  ]);
+  const [lifestyle, health, tech, travel, food] = categories;
 
-  const now = new Date();
-
-  // Seed posts
+  // Seed Posts
   await postRepo.save([
     {
-      title: '10 Simple Ways to Improve Your Daily Routine',
-      slug: '10-simple-ways-to-improve-your-daily-routine',
-      content: `<h2>Transform Your Morning</h2><p>Starting your day on the right foot can make all the difference. Here are ten proven strategies to help you build a more productive and fulfilling daily routine.</p><h3>1. Wake Up Early</h3><p>Early risers tend to be more proactive and productive. Try setting your alarm 30 minutes earlier each week until you reach your desired wake-up time.</p><h3>2. Hydrate First Thing</h3><p>Drink a large glass of water as soon as you wake up. After 7-8 hours of sleep, your body is dehydrated and needs replenishment.</p><h3>3. Exercise Daily</h3><p>Even a 20-minute walk can significantly improve your mood and energy levels throughout the day.</p><h3>4. Plan Your Day</h3><p>Take 10 minutes each morning to plan your tasks and priorities. This simple habit can double your productivity.</p><h3>5. Eat a Nutritious Breakfast</h3><p>Your brain needs fuel to function optimally. Choose foods rich in protein and complex carbohydrates.</p><p>Implementing these changes gradually will help them stick long-term. Remember, consistency is key!</p>`,
-      excerpt: 'Discover ten proven strategies to transform your daily routine and boost your productivity and wellbeing.',
+      title: 'How to Build a Morning Routine That Actually Works',
+      slug: 'morning-routine-that-works',
+      content: `<p>A great morning routine can transform your entire day. Here are the key elements to building one that sticks.</p>
+<h2>Start Small</h2>
+<p>Don't try to overhaul your entire morning at once. Begin with just one or two habits and build from there. Consistency is more important than perfection.</p>
+<h2>Wake Up at the Same Time</h2>
+<p>Your body thrives on routine. Setting a consistent wake-up time — even on weekends — helps regulate your circadian rhythm and makes mornings feel more natural.</p>
+<h2>Hydrate First</h2>
+<p>Before reaching for coffee, drink a full glass of water. After 7-8 hours of sleep, your body is dehydrated, and proper hydration kickstarts your metabolism.</p>
+<h2>Move Your Body</h2>
+<p>Even 10-15 minutes of gentle movement — stretching, yoga, or a short walk — can boost your energy levels and mental clarity for the rest of the day.</p>
+<h2>Plan Your Day</h2>
+<p>Take 5 minutes to review your goals and priorities. Writing down your top three tasks for the day creates focus and intention.</p>
+<p>Remember, the perfect morning routine is the one you'll actually do. Start small, be patient, and let it evolve naturally over time.</p>`,
+      excerpt: 'Discover how to create a sustainable morning routine that boosts productivity and sets you up for success every day.',
+      coverImage: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&auto=format&fit=crop',
+      author: 'Hayat Team',
       isPublished: true,
-      publishedAt: now,
-      category: categories[0],
-      categoryId: categories[0].id,
-      tags: [tags[0], tags[1]],
-      featuredImage: null,
+      isFeatured: true,
+      categoryId: lifestyle.id,
     },
     {
-      title: 'The Best Smart Home Devices of 2024',
-      slug: 'best-smart-home-devices-2024',
-      content: `<h2>Smart Home Revolution</h2><p>The smart home industry has exploded with innovative products that make our lives easier, more comfortable, and more energy-efficient.</p><h3>Smart Speakers</h3><p>Voice-controlled speakers have become the hub of the modern smart home. They can control lights, thermostats, locks, and more with simple voice commands.</p><h3>Smart Thermostats</h3><p>A smart thermostat can learn your preferences and automatically adjust temperature settings to save energy while keeping you comfortable.</p><h3>Security Cameras</h3><p>Modern security cameras offer HD video, night vision, motion detection, and cloud storage for complete peace of mind.</p><h3>Smart Lighting</h3><p>Programmable LED bulbs can change colors, dim automatically, and be controlled remotely — perfect for creating ambiance and saving electricity.</p><p>Investing in smart home technology is an investment in your quality of life and energy savings.</p>`,
-      excerpt: 'A comprehensive guide to the top smart home devices that will transform your living space in 2024.',
+      title: 'The Ultimate Guide to Mindful Eating',
+      slug: 'ultimate-guide-mindful-eating',
+      content: `<p>Mindful eating is a powerful practice that can transform your relationship with food and improve your overall health.</p>
+<h2>What Is Mindful Eating?</h2>
+<p>Mindful eating means paying full attention to the experience of eating — the taste, texture, smell, and satisfaction of food — without judgment or distraction.</p>
+<h2>Benefits of Mindful Eating</h2>
+<ul>
+<li>Better digestion and nutrient absorption</li>
+<li>Reduced overeating and emotional eating</li>
+<li>Greater satisfaction from meals</li>
+<li>Improved relationship with food</li>
+<li>Weight management support</li>
+</ul>
+<h2>How to Practice</h2>
+<p>Start by eliminating distractions during meals. Put away your phone, turn off the TV, and sit at a table. Eat slowly and chew thoroughly. Pay attention to hunger and fullness cues.</p>
+<h2>The 20-Minute Rule</h2>
+<p>It takes about 20 minutes for your brain to receive signals of fullness from your stomach. Eating slowly ensures you stop eating when you're satisfied, not overfull.</p>`,
+      excerpt: 'Learn how mindful eating can revolutionize your relationship with food and support your health goals.',
+      coverImage: 'https://images.unsplash.com/photo-1490645935967-10de6ba17061?w=800&auto=format&fit=crop',
+      author: 'Hayat Team',
       isPublished: true,
-      publishedAt: now,
-      category: categories[1],
-      categoryId: categories[1].id,
-      tags: [tags[2], tags[3]],
-      featuredImage: null,
+      isFeatured: true,
+      categoryId: health.id,
     },
     {
-      title: 'Spring Fashion Trends You Need to Know',
-      slug: 'spring-fashion-trends-2024',
-      content: `<h2>Fresh Styles for a New Season</h2><p>Spring brings with it a burst of color, new silhouettes, and exciting fashion possibilities. Here's what the runways and street style scenes are saying about this season's must-have looks.</p><h3>Pastel Perfection</h3><p>Soft pastels are dominating this spring. Think lavender, mint, peach, and butter yellow in everything from flowy dresses to tailored blazers.</p><h3>Maximalist Prints</h3><p>Bold floral prints, abstract patterns, and colorful stripes are having a major moment. Don't be afraid to mix and match.</p><h3>Sustainable Fashion</h3><p>Eco-conscious fashion continues to grow. Look for brands using organic materials, recycled fabrics, and ethical production methods.</p><h3>Statement Accessories</h3><p>Oversized sunglasses, chunky jewelry, and bold handbags are the finishing touches that elevate any outfit this season.</p>`,
-      excerpt: 'Explore the hottest spring fashion trends from runway to streetwear, and learn how to incorporate them into your wardrobe.',
+      title: 'Top 10 Productivity Apps of 2024',
+      slug: 'top-10-productivity-apps-2024',
+      content: `<p>In our increasingly digital world, the right apps can make a huge difference in how much you accomplish each day.</p>
+<h2>1. Notion</h2>
+<p>An all-in-one workspace for notes, tasks, databases, and project management. Notion's flexibility makes it suitable for individuals and teams alike.</p>
+<h2>2. Todoist</h2>
+<p>A powerful task manager with natural language input, priority levels, and seamless integration with other tools.</p>
+<h2>3. Forest</h2>
+<p>A unique focus app that gamifies deep work by growing virtual trees during focused sessions.</p>
+<h2>4. Obsidian</h2>
+<p>A note-taking app that creates a network of your ideas through bidirectional linking.</p>
+<h2>5. Calendly</h2>
+<p>Eliminates the back-and-forth of scheduling by letting others book time directly on your calendar.</p>
+<h2>6. RescueTime</h2>
+<p>Automatically tracks how you spend time on your devices and provides detailed productivity reports.</p>`,
+      excerpt: 'Boost your productivity with these essential apps that top performers rely on in 2024.',
+      coverImage: 'https://images.unsplash.com/photo-1512941937669-90a1b58e7e9c?w=800&auto=format&fit=crop',
+      author: 'Tech Editor',
       isPublished: true,
-      publishedAt: now,
-      category: categories[2],
-      categoryId: categories[2].id,
-      tags: [tags[3]],
-      featuredImage: null,
+      isFeatured: true,
+      categoryId: tech.id,
     },
     {
-      title: 'Mindfulness for Beginners: A Complete Guide',
-      slug: 'mindfulness-for-beginners-complete-guide',
-      content: `<h2>Starting Your Mindfulness Journey</h2><p>Mindfulness is the practice of being fully present and aware of your thoughts, feelings, and surroundings without judgment. It's a powerful tool for reducing stress and improving overall wellbeing.</p><h3>What is Mindfulness?</h3><p>At its core, mindfulness is about paying attention to the present moment with openness and curiosity. It's not about emptying your mind, but rather observing your thoughts without getting caught up in them.</p><h3>Getting Started with Meditation</h3><p>Begin with just 5 minutes a day. Find a quiet spot, sit comfortably, close your eyes, and focus on your breath. When your mind wanders (and it will), gently bring your attention back.</p><h3>Mindful Eating</h3><p>Try eating one meal a day without distractions. Notice the colors, textures, and flavors of your food. Eat slowly and savor each bite.</p><h3>Mindful Walking</h3><p>Turn your daily walk into a meditation practice by paying attention to each step, the sensation of your feet on the ground, and the sounds and sights around you.</p>`,
-      excerpt: 'Learn the basics of mindfulness meditation and discover how to incorporate mindfulness into your everyday life.',
+      title: 'Hidden Gems: Exploring Turkey\'s Coastal Villages',
+      slug: 'hidden-gems-turkey-coastal-villages',
+      content: `<p>Turkey's Aegean and Mediterranean coastlines are dotted with charming villages that most tourists never discover.</p>
+<h2>Alaçatı</h2>
+<p>This beautiful village near Çeşme is known for its stone houses covered in bougainvillea, boutique hotels, and excellent windsurfing conditions.</p>
+<h2>Şirince</h2>
+<p>Nestled in the hills above Selçuk, Şirince is famous for its fruit wines, traditional houses, and proximity to the ancient ruins of Ephesus.</p>
+<h2>Akyaka</h2>
+<p>A planned eco-village at the mouth of the Azmak River, Akyaka offers pristine waters, traditional Ottoman-style architecture, and excellent kite surfing.</p>
+<h2>Datça</h2>
+<p>Located on a narrow peninsula between the Aegean and Mediterranean, Datça is beloved for its wild almond forests, crystal-clear bays, and tranquil atmosphere.</p>
+<h2>Getting There</h2>
+<p>These villages are best explored by renting a car from major airports in Izmir, Bodrum, or Dalaman. The scenic coastal roads are part of the adventure.</p>`,
+      excerpt: 'Discover Turkey\'s most beautiful and lesser-known coastal villages that offer authentic experiences away from the tourist crowds.',
+      coverImage: 'https://images.unsplash.com/photo-1541432901042-2d8bd64b4a9b?w=800&auto=format&fit=crop',
+      author: 'Travel Writer',
       isPublished: true,
-      publishedAt: now,
-      category: categories[3],
-      categoryId: categories[3].id,
-      tags: [tags[1], tags[4]],
-      featuredImage: null,
+      isFeatured: false,
+      categoryId: travel.id,
     },
     {
-      title: 'Transform Your Living Room on a Budget',
-      slug: 'transform-living-room-budget',
-      content: `<h2>Beautiful Home, Smart Spending</h2><p>You don't need a massive budget to create a beautiful, functional living space. With some creativity and smart shopping, you can completely transform your living room.</p><h3>Start with Paint</h3><p>A fresh coat of paint is the most cost-effective way to change the entire feel of a room. Choose a color that reflects your personality and complements your furniture.</p><h3>Rearrange Your Furniture</h3><p>Before buying anything new, try rearranging your existing furniture. A different layout can make a room feel completely new.</p><h3>Add Plants</h3><p>Indoor plants add life, color, and even improve air quality. Start with low-maintenance varieties like pothos, snake plants, or ZZ plants.</p><h3>Layer Your Lighting</h3><p>Good lighting transforms any space. Combine overhead lighting with floor lamps, table lamps, and candles for a warm, inviting atmosphere.</p><h3>Shop Secondhand</h3><p>Thrift stores, estate sales, and online marketplaces are treasure troves of unique, affordable home decor pieces.</p>`,
-      excerpt: 'Discover creative and budget-friendly ideas to refresh your living room and make it feel brand new.',
+      title: 'Classic Turkish Breakfast: A Complete Guide',
+      slug: 'classic-turkish-breakfast-guide',
+      content: `<p>The Turkish breakfast, or "kahvaltı," is considered one of the world's great breakfast traditions. Here's how to recreate this feast at home.</p>
+<h2>The Essential Components</h2>
+<p>A proper Turkish breakfast is a spread, not a single dish. It includes:</p>
+<ul>
+<li><strong>Cheeses:</strong> White feta-style cheese, kashkaval (aged yellow cheese)</li>
+<li><strong>Olives:</strong> Both black and green varieties, often marinated</li>
+<li><strong>Eggs:</strong> Typically fried or scrambled with butter, or menemen (eggs with tomatoes and peppers)</li>
+<li><strong>Bread:</strong> Fresh, crusty bread or simit (sesame rings)</li>
+<li><strong>Preserves:</strong> Honey, various fruit jams</li>
+<li><strong>Vegetables:</strong> Sliced tomatoes, cucumbers, fresh herbs</li>
+<li><strong>Tea:</strong> Strong black tea served in tulip-shaped glasses</li>
+</ul>
+<h2>Menemen Recipe</h2>
+<p>Heat olive oil in a pan. Add diced onions and green peppers, cook until soft. Add chopped tomatoes and cook until broken down. Crack in eggs and stir gently until just set. Season with salt and cumin.</p>`,
+      excerpt: 'Learn everything about the beloved Turkish breakfast tradition and how to recreate this magnificent spread at home.',
+      coverImage: 'https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?w=800&auto=format&fit=crop',
+      author: 'Food Editor',
       isPublished: true,
-      publishedAt: now,
-      category: categories[4],
-      categoryId: categories[4].id,
-      tags: [tags[0], tags[1]],
-      featuredImage: null,
+      isFeatured: false,
+      categoryId: food.id,
+    },
+    {
+      title: 'Digital Detox: How to Reclaim Your Time',
+      slug: 'digital-detox-reclaim-your-time',
+      content: `<p>In an age of constant connectivity, intentional breaks from technology can be genuinely transformative.</p>
+<h2>Signs You Need a Digital Detox</h2>
+<ul>
+<li>You reach for your phone first thing in the morning</li>
+<li>You feel anxious without your phone nearby</li>
+<li>You struggle to be present in social situations</li>
+<li>Screen time is affecting your sleep quality</li>
+<li>You mindlessly scroll without purpose</li>
+</ul>
+<h2>How to Start</h2>
+<p>You don't need to go cold turkey. Start with small, intentional breaks. Try a "phone-free hour" before bed, or designate meal times as screen-free.</p>
+<h2>Create Phone-Free Zones</h2>
+<p>Designate certain areas of your home — bedroom, dining table — as phone-free zones. This creates natural boundaries without requiring constant willpower.</p>
+<h2>Replace Scrolling with Intentional Activities</h2>
+<p>Reading, journaling, cooking, walking in nature — having alternatives ready makes it easier to resist the pull of the screen.</p>`,
+      excerpt: 'Take back control of your attention and time with these practical digital detox strategies.',
+      coverImage: 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=800&auto=format&fit=crop',
+      author: 'Hayat Team',
+      isPublished: true,
+      isFeatured: false,
+      categoryId: lifestyle.id,
+    },
+    {
+      title: 'Yoga for Beginners: Start Your Practice Today',
+      slug: 'yoga-for-beginners-start-today',
+      content: `<p>Yoga is one of the most accessible and beneficial practices you can adopt for your physical and mental wellbeing.</p>
+<h2>Why Start Yoga?</h2>
+<p>Regular yoga practice offers numerous benefits including improved flexibility, strength, balance, stress reduction, and enhanced mind-body awareness.</p>
+<h2>Essential Poses for Beginners</h2>
+<h3>Mountain Pose (Tadasana)</h3>
+<p>The foundation of all standing poses. Stand tall with feet together, weight evenly distributed, and breathe deeply.</p>
+<h3>Downward-Facing Dog (Adho Mukha Svanasana)</h3>
+<p>An iconic pose that stretches the entire back body. Start on hands and knees, lift hips up and back.</p>
+<h3>Child's Pose (Balasana)</h3>
+<p>A resting pose that calms the mind and gently stretches the back. Kneel and fold forward with arms extended.</p>
+<h2>Getting Started</h2>
+<p>You only need a mat and comfortable clothing. Start with 15-20 minute sessions, three times per week. Consistency over intensity is key.</p>`,
+      excerpt: 'Everything you need to know to start a rewarding yoga practice, from essential poses to building a sustainable routine.',
+      coverImage: 'https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=800&auto=format&fit=crop',
+      author: 'Wellness Editor',
+      isPublished: true,
+      isFeatured: false,
+      categoryId: health.id,
+    },
+    {
+      title: 'How to Travel the World on a Budget',
+      slug: 'travel-world-on-budget',
+      content: `<p>Exploring the world doesn't have to drain your savings. With smart planning, budget travel can be both comfortable and enriching.</p>
+<h2>Book Flights Strategically</h2>
+<p>Use fare comparison tools like Google Flights, Skyscanner, or Kayak. Be flexible with dates — flying mid-week or during shoulder season can save hundreds.</p>
+<h2>Accommodation Alternatives</h2>
+<p>Hotels aren't the only option. Hostels, guesthouses, house-sitting, Couchsurfing, and platforms like Airbnb offer affordable alternatives that often provide richer local experiences.</p>
+<h2>Eat Like a Local</h2>
+<p>Avoid tourist restaurant areas. Eat at local markets, street food stalls, and neighborhood restaurants. Not only is it cheaper, it's often more delicious and authentic.</p>
+<h2>Free Activities</h2>
+<p>Many cities offer free walking tours (tip-based), free museum days, public parks, beaches, and festivals. Research before you arrive to take advantage of these.</p>
+<h2>Travel Slower</h2>
+<p>Rushing between destinations costs money and energy. Staying longer in fewer places reduces transportation costs and allows for deeper experiences.</p>`,
+      excerpt: 'Proven strategies for traveling the world without breaking the bank, from finding cheap flights to eating well on a budget.',
+      coverImage: 'https://images.unsplash.com/photo-1488646953014-85cb44e25828?w=800&auto=format&fit=crop',
+      author: 'Travel Writer',
+      isPublished: true,
+      isFeatured: false,
+      categoryId: travel.id,
     },
   ]);
 
-  // Seed products
+  // Seed Products
   await productRepo.save([
     {
       name: 'Premium Yoga Mat',
-      description: 'Eco-friendly, non-slip yoga mat perfect for all types of yoga and fitness exercises. Made from natural rubber with excellent cushioning for joint protection.',
-      price: 45.99,
-      imageUrl: null,
-      affiliateLink: '#',
-      isFeatured: true,
-      category: categories[3],
-      categoryId: categories[3].id,
+      description: 'Professional-grade non-slip yoga mat with alignment lines. Perfect for all skill levels. Made from eco-friendly TPE material that provides excellent cushioning and grip. Includes a carrying strap and is easy to clean. Dimensions: 183cm x 61cm x 6mm.',
+      price: 49.99,
+      imageUrl: 'https://images.unsplash.com/photo-1601925260368-ae2f83cf8b7f?w=600&auto=format&fit=crop',
+      affiliateLink: 'https://example.com/yoga-mat',
+      isActive: true,
+      categoryId: health.id,
     },
     {
-      name: 'Smart LED Desk Lamp',
-      description: 'Adjustable smart LED desk lamp with USB charging port, multiple brightness levels, and color temperature settings. Perfect for home office productivity.',
-      price: 35.00,
-      imageUrl: null,
-      affiliateLink: '#',
-      isFeatured: true,
-      category: categories[1],
-      categoryId: categories[1].id,
+      name: 'Smart Water Bottle',
+      description: 'Hydration-tracking smart bottle that reminds you to drink water throughout the day. Features LED time markers, made from BPA-free Tritan plastic. Holds 32oz. Tracks your daily water intake and glows to remind you to hydrate every hour.',
+      price: 34.99,
+      imageUrl: 'https://images.unsplash.com/photo-1602143407151-7111542de6e8?w=600&auto=format&fit=crop',
+      affiliateLink: 'https://example.com/smart-bottle',
+      isActive: true,
+      categoryId: health.id,
     },
     {
-      name: 'Minimalist Tote Bag',
-      description: 'Versatile canvas tote bag with leather handles. Spacious enough for everyday essentials, stylish enough for any occasion.',
-      price: 28.50,
-      imageUrl: null,
-      affiliateLink: '#',
-      isFeatured: true,
-      category: categories[2],
-      categoryId: categories[2].id,
-    },
-    {
-      name: 'Aromatherapy Diffuser',
-      description: 'Ultrasonic essential oil diffuser with 7 LED light colors and automatic shut-off. Creates a calming, spa-like atmosphere in any room.',
-      price: 22.99,
-      imageUrl: null,
-      affiliateLink: '#',
-      isFeatured: false,
-      category: categories[4],
-      categoryId: categories[4].id,
-    },
-    {
-      name: 'Organic Green Tea Set',
-      description: 'Premium collection of organic green teas from Japan. Includes Sencha, Matcha, and Gyokuro varieties for a complete tea experience.',
-      price: 18.75,
-      imageUrl: null,
-      affiliateLink: '#',
-      isFeatured: false,
-      category: categories[0],
-      categoryId: categories[0].id,
+      name: 'Travel Backpack 40L',
+      description: 'Versatile travel backpack with laptop compartment, multiple organizer pockets, and comfortable ergonomic straps. Water-resistant nylon construction. Features TSA-friendly design, hidden back pocket for valuables, and folds flat for easy storage when not in use.',
+      price: 89.99,
+      imageUrl: 'https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=600&auto=format&fit=crop',
+      affiliateLink: 'https://example.com/travel-backpack',
+      isActive: true,
+      categoryId: travel.id,
     },
     {
       name: 'Wireless Noise-Cancelling Headphones',
-      description: 'Premium over-ear headphones with active noise cancellation, 30-hour battery life, and superior sound quality for music lovers.',
-      price: 89.99,
-      imageUrl: null,
-      affiliateLink: '#',
-      isFeatured: true,
-      category: categories[1],
-      categoryId: categories[1].id,
+      description: 'Premium over-ear headphones with active noise cancellation, 30-hour battery life, and comfortable memory foam ear cups. Perfect for travel, work-from-home, or focused deep work sessions. Folds flat for easy transport.',
+      price: 129.99,
+      imageUrl: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=600&auto=format&fit=crop',
+      affiliateLink: 'https://example.com/headphones',
+      isActive: true,
+      categoryId: tech.id,
+    },
+    {
+      name: 'Morning Ritual Tea Set',
+      description: 'Curated collection of premium organic teas for your morning ritual. Includes 5 varieties: Energizing Matcha, Calming Chamomile, Antioxidant Green, Spiced Chai, and Turkish Black Tea. Each box contains 20 premium-grade tea bags.',
+      price: 29.99,
+      imageUrl: 'https://images.unsplash.com/photo-1556679343-c7306c1976bc?w=600&auto=format&fit=crop',
+      affiliateLink: 'https://example.com/tea-set',
+      isActive: true,
+      categoryId: food.id,
+    },
+    {
+      name: 'Leather Journal',
+      description: 'Hand-stitched genuine leather journal with 200 pages of acid-free, fountain pen-friendly paper. Perfect for journaling, sketching, or planning your adventures. Includes a bookmark ribbon and elastic closure band.',
+      price: 39.99,
+      imageUrl: 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=600&auto=format&fit=crop',
+      affiliateLink: 'https://example.com/leather-journal',
+      isActive: true,
+      categoryId: lifestyle.id,
+    },
+    {
+      name: 'Portable Coffee Maker',
+      description: 'Compact and lightweight French press coffee maker, perfect for travel and camping. Made from borosilicate glass with a durable stainless steel frame. Makes 2 cups at a time and comes in a protective neoprene sleeve.',
+      price: 24.99,
+      imageUrl: 'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=600&auto=format&fit=crop',
+      affiliateLink: 'https://example.com/coffee-maker',
+      isActive: true,
+      categoryId: food.id,
+    },
+    {
+      name: 'Mechanical Keyboard',
+      description: 'Compact tenkeyless mechanical keyboard with customizable RGB backlighting and tactile switches. Great for programmers, writers, and productivity enthusiasts. Compatible with Mac and Windows. Includes extra keycaps and a detachable USB-C cable.',
+      price: 79.99,
+      imageUrl: 'https://images.unsplash.com/photo-1587829741301-dc798b83add3?w=600&auto=format&fit=crop',
+      affiliateLink: 'https://example.com/mechanical-keyboard',
+      isActive: true,
+      categoryId: tech.id,
     },
   ]);
 }

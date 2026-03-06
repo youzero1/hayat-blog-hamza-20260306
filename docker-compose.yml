@@ -6,22 +6,16 @@ services:
       context: .
       dockerfile: Dockerfile
     ports:
-      - "3000:3000"
+      - '3000:3000'
     volumes:
-      - hayat-blog-data:/app/data
+      - hayat-blog-db:/app/data
     env_file:
       - .env
     environment:
       - NODE_ENV=production
       - DATABASE_PATH=/app/data/hayat-blog.sqlite
     restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:3000/api/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
 
 volumes:
-  hayat-blog-data:
+  hayat-blog-db:
     driver: local

@@ -1,4 +1,3 @@
-import 'reflect-metadata';
 import {
   Entity,
   PrimaryGeneratedColumn,
@@ -6,15 +5,15 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
   ManyToOne,
+  JoinColumn,
 } from 'typeorm';
-import type { Category } from './Category';
 
 @Entity('products')
 export class Product {
   @PrimaryGeneratedColumn()
   id!: number;
 
-  @Column()
+  @Column({ type: 'varchar', length: 255 })
   name!: string;
 
   @Column({ type: 'text' })
@@ -23,14 +22,14 @@ export class Product {
   @Column({ type: 'decimal', precision: 10, scale: 2 })
   price!: number;
 
-  @Column({ nullable: true })
-  imageUrl!: string | null;
+  @Column({ type: 'varchar', length: 500, nullable: true })
+  imageUrl!: string;
 
-  @Column({ nullable: true })
-  affiliateLink!: string | null;
+  @Column({ type: 'varchar', length: 500, nullable: true })
+  affiliateLink!: string;
 
-  @Column({ default: false })
-  isFeatured!: boolean;
+  @Column({ type: 'boolean', default: true })
+  isActive!: boolean;
 
   @CreateDateColumn()
   createdAt!: Date;
@@ -38,9 +37,10 @@ export class Product {
   @UpdateDateColumn()
   updatedAt!: Date;
 
-  @ManyToOne('Category', { nullable: true, eager: false })
-  category!: Category | null;
+  @ManyToOne('Category', 'products', { nullable: true, eager: false })
+  @JoinColumn({ name: 'categoryId' })
+  category!: any;
 
-  @Column({ nullable: true })
-  categoryId!: number | null;
+  @Column({ type: 'integer', nullable: true })
+  categoryId!: number;
 }

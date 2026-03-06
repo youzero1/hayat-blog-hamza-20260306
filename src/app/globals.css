@@ -2,63 +2,82 @@
 @tailwind components;
 @tailwind utilities;
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+  
+  body {
+    @apply bg-cream-50 text-gray-800 font-sans;
+  }
 
-:root {
-  --foreground-rgb: 0, 0, 0;
-  --background-start-rgb: 250, 249, 247;
-  --background-end-rgb: 255, 255, 255;
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-serif;
+  }
 }
 
-body {
-  color: rgb(var(--foreground-rgb));
-  background: rgb(var(--background-start-rgb));
-  font-family: 'Inter', system-ui, sans-serif;
-}
+@layer components {
+  .btn-primary {
+    @apply bg-forest-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-forest-700 transition-colors duration-200 inline-block;
+  }
 
-.prose h1, .prose h2, .prose h3, .prose h4 {
-  color: #1a1a1a;
-  font-family: Georgia, serif;
-  margin-top: 1.5rem;
-  margin-bottom: 0.75rem;
-}
+  .btn-secondary {
+    @apply bg-gold-500 text-white px-6 py-3 rounded-lg font-semibold hover:bg-gold-600 transition-colors duration-200 inline-block;
+  }
 
-.prose h2 {
-  font-size: 1.5rem;
-  font-weight: 700;
-}
+  .btn-outline {
+    @apply border-2 border-forest-600 text-forest-600 px-6 py-3 rounded-lg font-semibold hover:bg-forest-600 hover:text-white transition-colors duration-200 inline-block;
+  }
 
-.prose h3 {
-  font-size: 1.25rem;
-  font-weight: 600;
-}
+  .card {
+    @apply bg-white rounded-xl shadow-md overflow-hidden hover:shadow-xl transition-shadow duration-300;
+  }
 
-.prose p {
-  line-height: 1.8;
-  margin-bottom: 1rem;
-  color: #374151;
-}
+  .section-title {
+    @apply text-3xl font-serif font-bold text-forest-800 mb-2;
+  }
 
-.prose ul, .prose ol {
-  margin: 1rem 0;
-  padding-left: 1.5rem;
-}
+  .section-subtitle {
+    @apply text-gray-500 text-lg mb-8;
+  }
 
-.prose li {
-  margin-bottom: 0.5rem;
-  color: #374151;
-}
+  .badge {
+    @apply inline-block px-3 py-1 rounded-full text-xs font-semibold;
+  }
 
-.line-clamp-2 {
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
+  .badge-forest {
+    @apply badge bg-forest-100 text-forest-700;
+  }
 
-.line-clamp-3 {
-  display: -webkit-box;
-  -webkit-line-clamp: 3;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
+  .badge-gold {
+    @apply badge bg-gold-100 text-gold-700;
+  }
+
+  .container-custom {
+    @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
+  }
+
+  .blog-content h2 {
+    @apply text-2xl font-serif font-bold text-forest-800 mt-8 mb-4;
+  }
+
+  .blog-content h3 {
+    @apply text-xl font-serif font-bold text-forest-700 mt-6 mb-3;
+  }
+
+  .blog-content p {
+    @apply text-gray-700 leading-relaxed mb-4;
+  }
+
+  .blog-content ul {
+    @apply list-disc list-inside mb-4 space-y-2;
+  }
+
+  .blog-content li {
+    @apply text-gray-700;
+  }
+
+  .blog-content strong {
+    @apply font-semibold text-forest-800;
+  }
 }

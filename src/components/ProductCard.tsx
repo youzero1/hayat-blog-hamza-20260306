@@ -1,65 +1,70 @@
 import Link from 'next/link';
-import { Product } from '@/entities/Product';
-import { formatPrice } from '@/lib/utils';
+import Image from 'next/image';
 
 interface ProductCardProps {
-  product: Product;
+  product: {
+    id: number;
+    name: string;
+    description: string;
+    price: number;
+    imageUrl: string;
+    affiliateLink: string;
+    category?: { name: string; slug: string };
+  };
 }
 
 export default function ProductCard({ product }: ProductCardProps) {
   return (
-    <div className="bg-white rounded-2xl overflow-hidden border border-warm-100 shadow-sm hover:shadow-md transition-shadow group">
+    <div className="card flex flex-col group">
       {/* Image */}
-      <div className="w-full h-52 bg-gradient-to-br from-primary-100 to-warm-200 flex items-center justify-center relative">
-        <span className="text-5xl">🛍️</span>
-        {product.isFeatured && (
-          <span className="absolute top-3 left-3 bg-yellow-400 text-yellow-900 text-xs font-bold px-2 py-1 rounded-full">
-            ⭐ Featured
-          </span>
-        )}
-      </div>
+      <Link href={`/products/${product.id}`}>
+        <div className="relative h-48 overflow-hidden">
+          {product.imageUrl ? (
+            <Image
+              src={product.imageUrl}
+              alt={product.name}
+              fill
+              className="object-cover group-hover:scale-105 transition-transform duration-300"
+            />
+          ) : (
+            <div className="w-full h-full bg-gradient-to-br from-cream-200 to-cream-400 flex items-center justify-center">
+              <span className="text-4xl">🛍️</span>
+            </div>
+          )}
+          {product.category && (
+            <div className="absolute top-3 left-3">
+              <span className="badge-gold">{product.category.name}</span>
+            </div>
+          )}
+        </div>
+      </Link>
 
-      <div className="p-5">
-        {/* Category */}
-        {product.category && (
-          <span className="text-xs font-semibold text-primary-600 uppercase tracking-wide">
-            {product.category.name}
-          </span>
-        )}
-
-        {/* Name */}
-        <h3 className="font-bold text-warm-900 mt-1 mb-2 leading-tight line-clamp-2 group-hover:text-primary-600 transition-colors">
-          <Link href={`/products/${product.id}`}>{product.name}</Link>
-        </h3>
-
-        {/* Description */}
-        <p className="text-warm-500 text-sm mb-4 line-clamp-2 leading-relaxed">
+      {/* Content */}
+      <div className="p-5 flex-1 flex flex-col">
+        <Link href={`/products/${product.id}`}>
+          <h3 className="font-serif font-bold text-gray-900 mb-2 hover:text-forest-700 transition-colors line-clamp-1">
+            {product.name}
+          </h3>
+        </Link>
+        <p className="text-gray-500 text-sm leading-relaxed mb-4 flex-1 line-clamp-2">
           {product.description}
         </p>
-
-        {/* Price & CTA */}
-        <div className="flex items-center justify-between">
-          <span className="text-xl font-bold text-primary-600">
-            {formatPrice(product.price)}
-          </span>
-          <div className="flex gap-2">
-            <Link
-              href={`/products/${product.id}`}
-              className="text-sm font-medium text-warm-600 hover:text-warm-800 border border-warm-200 px-3 py-1.5 rounded-lg hover:border-warm-400"
-            >
-              Details
-            </Link>
-            {product.affiliateLink && (
-              <a
-                href={product.affiliateLink}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-sm font-medium bg-primary-600 text-white px-3 py-1.5 rounded-lg hover:bg-primary-700"
-              >
-                Buy
-              </a>
-            )}
+        <div className="mt-auto">
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-2xl font-bold text-forest-600">
+              ${Number(product.price).toFixed(2)}
+            </span>
           </div>
+          {product.affiliateLink && (
+            <a
+              href={product.affiliateLink}
+              target="_blank"
+              rel="noopener noreferrer nofollow"
+              className="w-full block text-center bg-gold-500 text-white py-2.5 rounded-lg font-semibold text-sm hover:bg-gold-600 transition-colors duration-200"
+            >
+              Buy Now →
+            </a>
+          )}
         </div>
       </div>
     </div>

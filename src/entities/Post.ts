@@ -1,4 +1,3 @@
-import 'reflect-metadata';
 import {
   Entity,
   PrimaryGeneratedColumn,
@@ -6,37 +5,37 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
   ManyToOne,
-  ManyToMany,
-  JoinTable,
+  JoinColumn,
 } from 'typeorm';
-import type { Category } from './Category';
-import type { Tag } from './Tag';
 
 @Entity('posts')
 export class Post {
   @PrimaryGeneratedColumn()
   id!: number;
 
-  @Column()
+  @Column({ type: 'varchar', length: 255 })
   title!: string;
 
-  @Column({ unique: true })
+  @Column({ type: 'varchar', length: 255, unique: true })
   slug!: string;
 
   @Column({ type: 'text' })
   content!: string;
 
   @Column({ type: 'text', nullable: true })
-  excerpt!: string | null;
+  excerpt!: string;
 
-  @Column({ nullable: true })
-  featuredImage!: string | null;
+  @Column({ type: 'varchar', length: 500, nullable: true })
+  coverImage!: string;
 
-  @Column({ default: false })
+  @Column({ type: 'varchar', length: 100, default: 'Admin' })
+  author!: string;
+
+  @Column({ type: 'boolean', default: true })
   isPublished!: boolean;
 
-  @Column({ nullable: true, type: 'datetime' })
-  publishedAt!: Date | null;
+  @Column({ type: 'boolean', default: false })
+  isFeatured!: boolean;
 
   @CreateDateColumn()
   createdAt!: Date;
@@ -45,16 +44,9 @@ export class Post {
   updatedAt!: Date;
 
   @ManyToOne('Category', 'posts', { nullable: true, eager: false })
-  category!: Category | null;
+  @JoinColumn({ name: 'categoryId' })
+  category!: any;
 
-  @Column({ nullable: true })
-  categoryId!: number | null;
-
-  @ManyToMany('Tag', 'posts', { eager: false })
-  @JoinTable({
-    name: 'post_tags',
-    joinColumn: { name: 'postId', referencedColumnName: 'id' },
-    inverseJoinColumn: { name: 'tagId', referencedColumnName: 'id' },
-  })
-  tags!: Tag[];
+  @Column({ type: 'integer', nullable: true })
+  categoryId!: number;
 }
