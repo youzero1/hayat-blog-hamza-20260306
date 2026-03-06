@@ -1,57 +1,44 @@
 # Hayat Blog
 
-A modern, full-stack blog platform built with Next.js 14, TypeScript, TypeORM, and SQLite.
+A full-stack blog platform with e-commerce elements built with Next.js, TypeScript, TypeORM, and SQLite.
 
 ## Features
 
-- 📝 Full blog platform with posts, categories, and comments
-- 🎨 Beautiful warm-toned design with Tailwind CSS
-- 🔍 Search and category filtering
-- 📱 Fully responsive layout
-- ⚡ Fast with Next.js server components
-- 🗄️ SQLite database with TypeORM
-- 🐳 Docker-ready for deployment
+- 📝 Full blog with categories, tags, and search
+- 🛍️ Product showcase with affiliate links
+- 📧 Newsletter subscription
+- 🔧 Admin dashboard for content management
+- 📱 Fully responsive design
 
 ## Getting Started
 
 ### Development
 
 ```bash
-npm install
+npm i
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) in your browser.
+Visit http://localhost:3000
 
-### Docker (Production)
+### Docker
 
 ```bash
 docker-compose up -d
 ```
 
-## Project Structure
+## Admin Access
 
-- `/src/app` - Next.js App Router pages and API routes
-- `/src/components` - Reusable UI components
-- `/src/entities` - TypeORM database entities
-- `/src/lib` - Database connection and utilities
-- `/src/types` - TypeScript type definitions
+Visit `/admin` to access the admin dashboard.
+
+Default credentials (set in .env):
+- Username: `admin`
+- Password: `admin123`
 
 ## Environment Variables
 
-Copy `.env` and adjust as needed:
+See `.env` file for configuration options.
 
-```
-DATABASE_PATH=./hayat-blog.sqlite
-NEXT_PUBLIC_SITE_NAME=Hayat Blog
-NEXT_PUBLIC_SITE_DESCRIPTION=A modern blog platform
-NEXT_PUBLIC_BASE_URL=http://localhost:3000
-```
+## Database
 
-## Tech Stack
-
-- **Framework**: Next.js 14 (App Router)
-- **Language**: TypeScript
-- **Database**: SQLite via TypeORM + better-sqlite3
-- **Styling**: Tailwind CSS
-- **Deployment**: Docker / Coolify compatible
+SQLite database is stored at `./data/hayat-blog.sqlite` and is automatically seeded with sample content on first run.

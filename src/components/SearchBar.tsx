@@ -1,71 +1,43 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 
 interface SearchBarProps {
-  onSearch: (value: string) => void;
   initialValue?: string;
-  placeholder?: string;
 }
 
-export default function SearchBar({
-  onSearch,
-  initialValue = '',
-  placeholder = 'Search posts...',
-}: SearchBarProps) {
-  const [value, setValue] = useState(initialValue);
+export default function SearchBar({ initialValue = '' }: SearchBarProps) {
+  const [query, setQuery] = useState(initialValue);
+  const router = useRouter();
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSearch(value);
-  };
-
-  const handleClear = () => {
-    setValue('');
-    onSearch('');
+    if (query.trim()) {
+      router.push(`/blog?search=${encodeURIComponent(query.trim())}`);
+    } else {
+      router.push('/blog');
+    }
   };
 
   return (
-    <form onSubmit={handleSubmit} className="relative">
-      <div className="relative flex items-center">
-        <svg
-          className="absolute left-3.5 text-warm-400 w-4 h-4 pointer-events-none"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-          />
-        </svg>
+    <form onSubmit={handleSubmit} className="flex gap-2 flex-1 max-w-md">
+      <div className="relative flex-1">
         <input
           type="text"
-          value={value}
-          onChange={(e) => setValue(e.target.value)}
-          placeholder={placeholder}
-          className="w-full pl-10 pr-20 py-2.5 border border-warm-300 rounded-xl bg-warm-50 text-warm-800 placeholder-warm-400 focus:outline-none focus:ring-2 focus:ring-primary-400 focus:border-transparent"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="Search posts..."
+          className="w-full pl-10 pr-4 py-2 border border-warm-200 rounded-full focus:outline-none focus:border-primary-400 focus:ring-1 focus:ring-primary-400 bg-white"
         />
-        {value && (
-          <button
-            type="button"
-            onClick={handleClear}
-            className="absolute right-16 text-warm-400 hover:text-warm-600 transition-colors"
-          >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
-        )}
-        <button
-          type="submit"
-          className="absolute right-2 bg-primary-500 hover:bg-primary-600 text-white px-3 py-1.5 rounded-lg text-sm font-medium transition-colors"
-        >
-          Search
-        </button>
+        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-warm-400">🔍</span>
       </div>
+      <button
+        type="submit"
+        className="bg-primary-600 text-white px-5 py-2 rounded-full font-medium hover:bg-primary-700 transition-colors text-sm"
+      >
+        Search
+      </button>
     </form>
   );
 }

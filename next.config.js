@@ -4,17 +4,14 @@ const nextConfig = {
   experimental: {
     serverComponentsExternalPackages: ['typeorm', 'better-sqlite3', 'reflect-metadata'],
   },
-  images: {
-    remotePatterns: [
-      {
-        protocol: 'https',
-        hostname: '**',
-      },
-      {
-        protocol: 'http',
-        hostname: '**',
-      },
-    ],
+  webpack: (config, { isServer }) => {
+    if (isServer) {
+      if (!Array.isArray(config.externals)) {
+        config.externals = [config.externals].filter(Boolean);
+      }
+      config.externals.push('better-sqlite3');
+    }
+    return config;
   },
 };
 

@@ -1,24 +1,30 @@
+import 'reflect-metadata';
 import {
   Entity,
   PrimaryGeneratedColumn,
   Column,
+  CreateDateColumn,
   OneToMany,
 } from 'typeorm';
+import type { Post } from './Post';
 
 @Entity('categories')
 export class Category {
   @PrimaryGeneratedColumn()
   id!: number;
 
-  @Column({ nullable: false })
+  @Column({ unique: true })
   name!: string;
 
-  @Column({ unique: true, nullable: false })
+  @Column({ unique: true })
   slug!: string;
 
-  @Column({ nullable: true })
-  description!: string;
+  @Column({ nullable: true, type: 'text' })
+  description!: string | null;
+
+  @CreateDateColumn()
+  createdAt!: Date;
 
   @OneToMany('Post', 'category')
-  posts!: any[];
+  posts!: Post[];
 }

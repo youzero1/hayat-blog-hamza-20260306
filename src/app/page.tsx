@@ -1,171 +1,180 @@
 import Link from 'next/link';
-import FeaturedPost from '@/components/FeaturedPost';
-import PostCard from '@/components/PostCard';
-import Sidebar from '@/components/Sidebar';
-import Newsletter from '@/components/Newsletter';
-import Pagination from '@/components/Pagination';
-import { PostType, CategoryType } from '@/types';
+import { getDataSource } from '@/lib/database';
+import { Post } from '@/entities/Post';
+import { Product } from '@/entities/Product';
+import { Category } from '@/entities/Category';
+import BlogCard from '@/components/BlogCard';
+import ProductCard from '@/components/ProductCard';
+import NewsletterSignup from '@/components/NewsletterSignup';
 
-async function getFeaturedPosts(): Promise<PostType[]> {
-  try {
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
-    const res = await fetch(`${baseUrl}/api/posts?featured=true&limit=3`, {
-      cache: 'no-store',
-    });
-    if (!res.ok) return [];
-    const data = await res.json();
-    return data.data || [];
-  } catch {
-    return [];
-  }
-}
+export const dynamic = 'force-dynamic';
 
-async function getLatestPosts(page: number = 1): Promise<{ posts: PostType[]; totalPages: number }> {
-  try {
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
-    const res = await fetch(`${baseUrl}/api/posts?page=${page}&limit=6`, {
-      cache: 'no-store',
-    });
-    if (!res.ok) return { posts: [], totalPages: 0 };
-    const data = await res.json();
-    return { posts: data.data || [], totalPages: data.totalPages || 0 };
-  } catch {
-    return { posts: [], totalPages: 0 };
-  }
-}
+export default async function HomePage() {
+  const ds = await getDataSource();
+  const postRepo = ds.getRepository(Post);
+  const productRepo = ds.getRepository(Product);
+  const categoryRepo = ds.getRepository(Category);
 
-async function getCategories(): Promise<CategoryType[]> {
-  try {
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
-    const res = await fetch(`${baseUrl}/api/categories`, { cache: 'no-store' });
-    if (!res.ok) return [];
-    const data = await res.json();
-    return data || [];
-  } catch {
-    return [];
-  }
-}
+  const latestPosts = await postRepo.find({
+    where: { isPublished: true },
+    relations: ['category'],
+    order: { publishedAt: 'DESC' },
+    take: 6,
+  });
 
-export default async function HomePage({
-  searchParams,
-}: {
-  searchParams: { page?: string };
-}) {
-  const page = parseInt(searchParams.page || '1', 10);
-  const [featuredPosts, { posts: latestPosts, totalPages }, categories] = await Promise.all([
-    getFeaturedPosts(),
-    getLatestPosts(page),
-    getCategories(),
-  ]);
+  const featuredProducts = await productRepo.find({
+    where: { isFeatured: true },
+    relations: ['category'],
+    take: 4,
+  });
+
+  const categories = await categoryRepo.find({
+    order: { name: 'ASC' },
+  });
 
   return (
     <div>
       {/* Hero Section */}
-      <section className="bg-gradient-to-br from-warm-900 via-warm-800 to-sage-800 text-white py-20 px-4">
-        <div className="max-w-6xl mx-auto text-center">
-          <div className="inline-flex items-center gap-2 bg-primary-500/20 text-primary-200 text-sm font-medium px-4 py-1.5 rounded-full mb-6 border border-primary-400/30">
-            <span className="w-2 h-2 bg-primary-400 rounded-full animate-pulse"></span>
-            Welcome to Hayat Blog
-          </div>
-          <h1 className="text-5xl md:text-7xl font-serif font-bold mb-6 leading-tight">
-            Stories That
-            <span className="text-primary-400"> Inspire</span>
+      <section className="bg-gradient-to-br from-primary-600 via-primary-500 to-warm-500 text-white">
+        <div className="max-w-7xl mx-auto px-4 py-20 text-center">
+          <h1 className="text-5xl md:text-6xl font-bold mb-4" style={{ fontFamily: 'Georgia, serif' }}>
+            Hayat Blog
           </h1>
-          <p className="text-xl md:text-2xl text-warm-200 max-w-2xl mx-auto mb-10 leading-relaxed">
-            Explore thoughtful articles on technology, lifestyle, travel, and culinary arts.
-            A place where ideas come alive.
+          <p className="text-xl md:text-2xl text-primary-100 mb-8 max-w-2xl mx-auto">
+            Discover inspiration for life, style, technology, and wellness
           </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+          <div className="flex flex-wrap gap-4 justify-center">
             <Link
-              href="/posts"
-              className="bg-primary-500 hover:bg-primary-600 text-white px-8 py-3 rounded-full font-semibold text-lg transition-all duration-200 hover:shadow-lg hover:-translate-y-0.5"
+              href="/blog"
+              className="bg-white text-primary-600 px-8 py-3 rounded-full font-semibold hover:bg-primary-50 transition-colors"
             >
-              Browse All Posts
+              Read the Blog
             </Link>
             <Link
-              href="/categories"
-              className="bg-white/10 hover:bg-white/20 text-white px-8 py-3 rounded-full font-semibold text-lg border border-white/20 transition-all duration-200 hover:shadow-lg hover:-translate-y-0.5"
+              href="/products"
+              className="border-2 border-white text-white px-8 py-3 rounded-full font-semibold hover:bg-white hover:text-primary-600 transition-colors"
             >
-              Explore Categories
+              Shop Products
             </Link>
           </div>
         </div>
       </section>
 
-      {/* Featured Posts Section */}
-      {featuredPosts.length > 0 && (
-        <section className="py-16 bg-warm-100">
-          <div className="max-w-6xl mx-auto px-4">
-            <div className="flex items-center justify-between mb-10">
-              <div>
-                <span className="text-primary-600 text-sm font-semibold uppercase tracking-wider">Featured</span>
-                <h2 className="text-3xl font-serif font-bold text-warm-900 mt-1">Editor\'s Picks</h2>
-              </div>
+      {/* Category Navigation */}
+      <section className="bg-white border-b border-warm-200">
+        <div className="max-w-7xl mx-auto px-4 py-4">
+          <div className="flex flex-wrap gap-3 justify-center">
+            {categories.map((cat) => (
               <Link
-                href="/posts"
-                className="text-primary-600 hover:text-primary-700 font-medium text-sm flex items-center gap-1 group"
+                key={cat.id}
+                href={`/categories/${cat.slug}`}
+                className="px-4 py-2 bg-warm-100 text-warm-700 rounded-full text-sm font-medium hover:bg-primary-100 hover:text-primary-700 transition-colors"
               >
-                View all
-                <span className="group-hover:translate-x-1 transition-transform">→</span>
+                {cat.name}
+              </Link>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Main Content */}
+      <div className="max-w-7xl mx-auto px-4 py-12">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
+          {/* Latest Posts */}
+          <div className="lg:col-span-2">
+            <div className="flex items-center justify-between mb-8">
+              <h2 className="text-3xl font-bold text-warm-900" style={{ fontFamily: 'Georgia, serif' }}>
+                Latest Posts
+              </h2>
+              <Link href="/blog" className="text-primary-600 hover:text-primary-700 font-medium">
+                View All →
               </Link>
             </div>
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {featuredPosts[0] && (
-                <div className="lg:row-span-2">
-                  <FeaturedPost post={featuredPosts[0]} large />
-                </div>
-              )}
-              {featuredPosts.slice(1).map((post) => (
-                <FeaturedPost key={post.id} post={post} />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {latestPosts.map((post) => (
+                <BlogCard key={post.id} post={post} />
               ))}
             </div>
-          </div>
-        </section>
-      )}
-
-      {/* Latest Posts + Sidebar */}
-      <section className="py-16">
-        <div className="max-w-6xl mx-auto px-4">
-          <div className="flex flex-col lg:flex-row gap-10">
-            {/* Main Content */}
-            <div className="flex-1">
-              <div className="flex items-center justify-between mb-8">
-                <div>
-                  <span className="text-primary-600 text-sm font-semibold uppercase tracking-wider">Latest</span>
-                  <h2 className="text-3xl font-serif font-bold text-warm-900 mt-1">Recent Posts</h2>
-                </div>
+            {latestPosts.length === 0 && (
+              <div className="text-center py-12 text-warm-500">
+                <p>No posts yet. Check back soon!</p>
               </div>
+            )}
+          </div>
 
-              {latestPosts.length > 0 ? (
-                <>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {latestPosts.map((post) => (
-                      <PostCard key={post.id} post={post} />
-                    ))}
-                  </div>
-                  {totalPages > 1 && (
-                    <div className="mt-10">
-                      <Pagination currentPage={page} totalPages={totalPages} baseUrl="/" />
+          {/* Sidebar */}
+          <div className="space-y-8">
+            {/* Featured Products */}
+            <div className="bg-white rounded-2xl p-6 shadow-sm border border-warm-100">
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-xl font-bold text-warm-900">Featured Products</h3>
+                <Link href="/products" className="text-primary-600 hover:text-primary-700 text-sm font-medium">
+                  View All
+                </Link>
+              </div>
+              <div className="space-y-4">
+                {featuredProducts.map((product) => (
+                  <div key={product.id} className="flex items-start gap-3 pb-4 border-b border-warm-100 last:border-0 last:pb-0">
+                    <div className="w-16 h-16 bg-gradient-to-br from-primary-100 to-warm-200 rounded-lg flex items-center justify-center flex-shrink-0">
+                      <span className="text-2xl">🛍️</span>
                     </div>
-                  )}
-                </>
-              ) : (
-                <div className="text-center py-16 text-warm-500">
-                  <p className="text-xl">No posts yet. Check back soon!</p>
-                </div>
-              )}
+                    <div className="flex-1 min-w-0">
+                      <h4 className="font-medium text-warm-900 text-sm leading-tight mb-1 line-clamp-2">{product.name}</h4>
+                      <p className="text-primary-600 font-bold text-sm">${Number(product.price).toFixed(2)}</p>
+                      <Link
+                        href={`/products/${product.id}`}
+                        className="text-xs text-warm-500 hover:text-primary-600"
+                      >
+                        View Details
+                      </Link>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
 
-            {/* Sidebar */}
-            <aside className="w-full lg:w-80 flex-shrink-0">
-              <Sidebar categories={categories} />
-              <div className="mt-8">
-                <Newsletter />
-              </div>
-            </aside>
+            {/* Categories */}
+            <div className="bg-white rounded-2xl p-6 shadow-sm border border-warm-100">
+              <h3 className="text-xl font-bold text-warm-900 mb-4">Categories</h3>
+              <ul className="space-y-2">
+                {categories.map((cat) => (
+                  <li key={cat.id}>
+                    <Link
+                      href={`/categories/${cat.slug}`}
+                      className="flex items-center justify-between py-2 px-3 rounded-lg hover:bg-warm-50 text-warm-700 hover:text-primary-600 transition-colors"
+                    >
+                      <span>{cat.name}</span>
+                      <span className="text-warm-400">→</span>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
           </div>
         </div>
-      </section>
+
+        {/* Featured Products Grid */}
+        <section className="mt-16">
+          <div className="flex items-center justify-between mb-8">
+            <h2 className="text-3xl font-bold text-warm-900" style={{ fontFamily: 'Georgia, serif' }}>
+              Shop Our Picks
+            </h2>
+            <Link href="/products" className="text-primary-600 hover:text-primary-700 font-medium">
+              View All Products →
+            </Link>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            {featuredProducts.map((product) => (
+              <ProductCard key={product.id} product={product} />
+            ))}
+          </div>
+        </section>
+
+        {/* Newsletter */}
+        <section className="mt-16">
+          <NewsletterSignup />
+        </section>
+      </div>
     </div>
   );
 }

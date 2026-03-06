@@ -5,43 +5,48 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 
 :root {
-  --foreground-rgb: 42, 42, 36;
-  --background-rgb: 250, 250, 249;
+  --foreground-rgb: 0, 0, 0;
+  --background-start-rgb: 250, 249, 247;
+  --background-end-rgb: 255, 255, 255;
 }
 
 body {
   color: rgb(var(--foreground-rgb));
-  background: rgb(var(--background-rgb));
+  background: rgb(var(--background-start-rgb));
   font-family: 'Inter', system-ui, sans-serif;
 }
 
 .prose h1, .prose h2, .prose h3, .prose h4 {
-  font-family: Georgia, Cambria, 'Times New Roman', Times, serif;
-  color: #2e2e24;
+  color: #1a1a1a;
+  font-family: Georgia, serif;
+  margin-top: 1.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.prose h2 {
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+.prose h3 {
+  font-size: 1.25rem;
+  font-weight: 600;
 }
 
 .prose p {
   line-height: 1.8;
-  color: #4a4a3c;
+  margin-bottom: 1rem;
+  color: #374151;
 }
 
 .prose ul, .prose ol {
-  color: #4a4a3c;
+  margin: 1rem 0;
+  padding-left: 1.5rem;
 }
 
-.prose pre {
-  background: #2e2e24;
-  color: #f5f5f0;
-  padding: 1rem;
-  border-radius: 0.5rem;
-  overflow-x: auto;
-}
-
-.prose code {
-  background: #e8e8df;
-  padding: 0.1rem 0.3rem;
-  border-radius: 0.25rem;
-  font-size: 0.875rem;
+.prose li {
+  margin-bottom: 0.5rem;
+  color: #374151;
 }
 
 .line-clamp-2 {
@@ -56,49 +61,4 @@ body {
   -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
   overflow: hidden;
-}
-
-.line-clamp-4 {
-  display: -webkit-box;
-  -webkit-line-clamp: 4;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-
-@layer utilities {
-  .text-balance {
-    text-wrap: balance;
-  }
-}
-
-/* Custom scrollbar */
-::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
-}
-
-::-webkit-scrollbar-track {
-  background: #f5f5f0;
-}
-
-::-webkit-scrollbar-thumb {
-  background: #d4d4c8;
-  border-radius: 4px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: #a8a895;
-}
-
-/* Smooth transitions */
-* {
-  transition-property: color, background-color, border-color;
-  transition-duration: 150ms;
-  transition-timing-function: ease;
-}
-
-/* Focus styles */
-*:focus-visible {
-  outline: 2px solid #d98c28;
-  outline-offset: 2px;
 }

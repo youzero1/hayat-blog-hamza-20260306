@@ -8,8 +8,7 @@ export const metadata: Metadata = {
     default: 'Hayat Blog',
     template: '%s | Hayat Blog',
   },
-  description: 'A modern blog platform for sharing stories and ideas',
-  keywords: ['blog', 'lifestyle', 'technology', 'travel', 'food'],
+  description: 'Your source for lifestyle, technology, fashion, health, and home living inspiration.',
 };
 
 export default function RootLayout({
@@ -19,7 +18,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className="min-h-screen flex flex-col bg-warm-50">
+      <body className="min-h-screen bg-warm-50 flex flex-col">
         <Header />
         <main className="flex-1">
           {children}
